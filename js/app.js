@@ -18,15 +18,22 @@ var conic = new Surface(
     var r = 5, t = 2 * Math.PI * u, h = 210;
     return piecewise([
       {
-	range: [0, 0.5], 
-	fn: revolvingParametric(vectorLine(0, 0, 105/210*h, -105/210*h)).bind({}, t)
+	range: [0, 0.3], 
+	fn: revolvingParametric(function(t, s) {
+	  return new Vector((1-t)*100, 0);
+	}).bind({}, t)
       },
       {
-	range: [0.5, 1], 
-	fn: revolvingParametric(bezier([105/210*h, -105/210*h],
-	      [178/210*h, -153/210*h],
-	      [97/210*h, -210/210*h],
-	      [0/210*h, -207/210*h])).bind({}, t)
+	range: [0.3, 0.7], 
+	fn: revolvingParametric(function(t, s) {
+	  return new Vector(100, t*100);
+	}).bind({}, t)
+      },
+      {
+	range: [0.7, 1], 
+	fn: revolvingParametric(function(t, s) {
+	  return new Vector((1-t)*100, 100);
+	}).bind({}, t)
       }
     ])(v);
   });

@@ -16,13 +16,14 @@ var cylinder = function(s) {
 	  { range: [0.3, 0.7], fn: revolvingParametric(function(s, t) { return new Vector(100, s*100); }).bind({}, s) },
 	  { range: [0.7, 1], fn: revolvingParametric(function(s, t) { return new Vector((1-s)*100, 100); }).bind({}, s) }]);
 };
+var sphere = revolvingParametric(function(s, t) { return new Vector(sqrt(square(50) - square(s*100-50)), s*100) });
 var parametric = new Surface(
   {x: 0, y: 0, z: 0},
   [310, -30, 0],
   function(u, v) {
     // A piecewise surface of revolution from two parametric functions.
     var r = 5, t = 2 * Math.PI * u, h = 210;
-    return cylinder(t)(v);
+    return sphere(t, v);
   });
 
 parametric.addTo(scene);

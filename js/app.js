@@ -10,34 +10,21 @@ var controls = new Controls(renderer.render.bind(renderer), camera, scene);
 controls.position.z = 0;
 controls.position.x = -500;
 
-var conic = new Surface(
+var cylinder = function(s) {
+  return piecewise([
+	  { range: [0, 0.3], fn: revolvingParametric(function(s, t) { return new Vector(s*100, 0); }).bind({}, s) },
+	  { range: [0.3, 0.7], fn: revolvingParametric(function(s, t) { return new Vector(100, s*100); }).bind({}, s) },
+	  { range: [0.7, 1], fn: revolvingParametric(function(s, t) { return new Vector((1-s)*100, 100); }).bind({}, s) }]);
+};
+var parametric = new Surface(
   {x: 0, y: 0, z: 0},
   [310, -30, 0],
   function(u, v) {
     // A piecewise surface of revolution from two parametric functions.
     var r = 5, t = 2 * Math.PI * u, h = 210;
-    return piecewise([
-      {
-	range: [0, 0.3], 
-	fn: revolvingParametric(function(t, s) {
-	  return new Vector((1-t)*100, 0);
-	}).bind({}, t)
-      },
-      {
-	range: [0.3, 0.7], 
-	fn: revolvingParametric(function(t, s) {
-	  return new Vector(100, t*100);
-	}).bind({}, t)
-      },
-      {
-	range: [0.7, 1], 
-	fn: revolvingParametric(function(t, s) {
-	  return new Vector((1-t)*100, 100);
-	}).bind({}, t)
-      }
-    ])(v);
+    return cylinder(t)(v);
   });
 
-conic.addTo(scene);
+parametric.addTo(scene);
 controls.render();
 

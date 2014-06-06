@@ -64,19 +64,19 @@ var cube = function(theta) {
   return piecewise([
       { range: [0, 0.3],
 	fn: function(h) {
-	  return revolvingParametric(function(h) {
+	  return functionSpace(function(h) {
 	    return new Vector(h*100*cubeRadius(theta), 0);
 	  })(h, theta)
 	} },
       { range: [0.3, 0.7],
 	fn: function(h) {
-	  return revolvingParametric(function(h) {
+	  return functionSpace(function(h) {
 	    return new Vector(cubeRadius(theta)*100, h*100);
 	  })(h, theta) 
 	} },
       { range: [0.7, 1],
 	fn: function(h) {
-	  return revolvingParametric(function(h) {
+	  return functionSpace(function(h) {
 	    return new Vector((1-h)*100*cubeRadius(theta), 100);
 	  })(h, theta) 
 	} }]);

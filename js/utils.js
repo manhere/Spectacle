@@ -72,3 +72,71 @@ var revolvingParametric = function(f) {
       f(s).y);
   };
 };
+var drawLine = function(d, to) {
+  var geometry = new THREE.Geometry();
+  geometry.vertices.push(new THREE.Vector3(0, 0, 0));
+  geometry.vertices.push(to);
+  var colors = [0xff0000, 0x00ff00, 0x0000ff];
+  var material = new THREE.LineBasicMaterial({ color: colors[d] });
+  return new THREE.Line(geometry, material);
+};
+var formZeroBasis = function(x, y, z) {
+  if( x && y && z ) {
+    throw new Error("Cannot form basis around null.");
+  } else if( x && y ) {
+    return [new THREE.Vector3(1, 0, 0),
+	    new THREE.Vector3(0, 1, 0),
+	    new THREE.Vector3(0, 0, 1)];
+  } else if( y && z ) {
+    return [new THREE.Vector3(0, 1, 0),
+	    new THREE.Vector3(0, 0, 1),
+	    new THREE.Vector3(1, 0, 0)];
+  } else if( x && z ) {
+    return [new THREE.Vector3(0, 0, 1),
+	    new THREE.Vector3(1, 0, 0),
+	    new THREE.Vector3(0, 1, 0)];
+  } else {
+    return false;
+  }
+};
+var formBasis = function(n) {
+  var b = null;
+  if( (b = formZeroBasis(n.x == 0, n.y == 0, n.z == 0)) ) {
+    return b;
+  }
+  var zprime = n.clone();
+  zprime.normalize();
+  var xprime;
+  if( zprime.z == 0 ) {
+    xprime = new THREE.Vector3(-(zprime.y + 2*zprime.z)/zprime.x, 1, 2);
+  } else {
+    xprime = new THREE.Vector3(1, 2, -(zprime.x + 2*zprime.y)/zprime.z);
+  }
+  xprime.normalize();
+  var yprime = new THREE.Vector3();
+  yprime.crossVectors(zprime, xprime);
+  yprime.normalize();
+  return [xprime, yprime, zprime];
+};
+var renderLines = function(ls, scene) {
+  ls.map(function(v) {
+    return v.clone().multiplyScalar(100);
+  }).map(function(v, d) {
+    return drawLine(d, v);
+  }).forEach(function(l) {
+    scene.add(l);
+  });
+};
+var revolvingNormalParametric = function(basis) {
+  var xprime = basis[0];
+  var yprime = basis[1];
+  var zprime = basis[2];
+  return function(f) {
+    return function(t, s) {
+      return xprime.clone().multiplyScalar(cos(t) * f(s).x).add(
+	     yprime.clone().multiplyScalar(sin(t) * f(s).x).add(
+	     zprime.clone().multiplyScalar(f(s).y)));
+    };
+  };
+};
+

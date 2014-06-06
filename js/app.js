@@ -13,7 +13,7 @@ controls.position.x = -500;
 var z = new THREE.Vector3(1, 2, 3);
 var basis = formBasis(z);
 renderLines(basis, scene);
-var functionSpace = revolvingNormalParametric(basis);
+var functionSpace = surfaceBasisTransformer(basis);
 
 var cylinder = function(h, theta) {
   return piecewise([
@@ -39,7 +39,7 @@ var cylinder = function(h, theta) {
 
 var z2 = new THREE.Vector3(0, 0, 1);
 var basis2 = formBasis(z2);
-var functionSpace2 = revolvingNormalParametric(basis2);
+var functionSpace2 = surfaceBasisTransformer(basis2);
 var sphere = functionSpace2(function(h) {
   return new Vector(sqrt(square(50) - square(h*100-50)), h*100)
 });

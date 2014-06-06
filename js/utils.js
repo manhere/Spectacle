@@ -128,7 +128,7 @@ var renderLines = function(ls, scene) {
     scene.add(l);
   });
 };
-var revolvingNormalParametric = function(basis) {
+var surfaceBasisTransformer = function(basis) {
   var xprime = basis[0];
   var yprime = basis[1];
   var zprime = basis[2];

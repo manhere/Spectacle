@@ -66,7 +66,7 @@ var piecewise = function(fns) {
   };
 };
 var revolvingParametric = function(f) {
-  return function(theta, h) {
+  return function(h, theta) {
     return new THREE.Vector3(
       cos(theta) * f(h).x,
       sin(theta) * f(h).x,

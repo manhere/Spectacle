@@ -1,6 +1,7 @@
 var cos = Math.cos.bind(Math);
 var sin = Math.sin.bind(Math);
 var tan = Math.tan.bind(Math);
+var abs = Math.abs.bind(Math);
 var normalize = function(vec) {
   return vec.map(divideBy(sqrt(vec.map(square).reduce(sum, 0))));
 };
@@ -65,11 +66,11 @@ var piecewise = function(fns) {
   };
 };
 var revolvingParametric = function(f) {
-  return function(t, s) {
+  return function(theta, h) {
     return new THREE.Vector3(
-      cos(t) * f(s).x,
-      sin(t) * f(s).x,
-      f(s).y);
+      cos(theta) * f(h).x,
+      sin(theta) * f(h).x,
+      f(h).y);
   };
 };
 var drawLine = function(d, to) {
@@ -132,10 +133,10 @@ var revolvingNormalParametric = function(basis) {
   var yprime = basis[1];
   var zprime = basis[2];
   return function(f) {
-    return function(t, s) {
-      return xprime.clone().multiplyScalar(cos(t) * f(s).x).add(
-	     yprime.clone().multiplyScalar(sin(t) * f(s).x).add(
-	     zprime.clone().multiplyScalar(f(s).y)));
+    return function(h, theta) {
+      return xprime.clone().multiplyScalar(cos(theta) * f(h).x).add(
+	     yprime.clone().multiplyScalar(sin(theta) * f(h).x).add(
+	     zprime.clone().multiplyScalar(f(h).y)));
     };
   };
 };

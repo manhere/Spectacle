@@ -15,44 +15,91 @@ var basis = formBasis(z);
 renderLines(basis, scene);
 var functionSpace = revolvingNormalParametric(basis);
 
-var cylinder = function(s) {
+var cylinder = function(h, theta) {
   return piecewise([
 	  { range: [0, 0.3], 
-	    fn: functionSpace(function(s, t) {
-	      return new Vector(s*100, 0);
-	    }).bind({}, s) },
+	    fn: function(h) {
+	      return functionSpace(function(h) {
+	        return new Vector(h*100, 0);
+	      })(h, theta)
+	    } },
 	  { range: [0.3, 0.7], 
-	    fn: functionSpace(function(s, t) {
-	      return new Vector(100, s*100);
-	    }).bind({}, s) },
+	    fn: function(h) {
+	      return functionSpace(function(h) {
+		return new Vector(100, h*100);
+	      })(h, theta);
+	    } },
 	  { range: [0.7, 1], 
-	    fn: functionSpace(function(s, t) {
-	      return new Vector((1-s)*100, 100);
-	    }).bind({}, s) }]);
+	    fn: function(h) {
+	      return functionSpace(function(h) {
+		return new Vector((1-h)*100, 100);
+	      })(h, theta);
+	    } }])(h);
 };
 
 var z2 = new THREE.Vector3(0, 0, 1);
 var basis2 = formBasis(z2);
 var functionSpace2 = revolvingNormalParametric(basis2);
-var sphere = functionSpace2(function(s, t) {
-  return new Vector(sqrt(square(50) - square(s*100-50)), s*100)
+var sphere = functionSpace2(function(h) {
+  return new Vector(sqrt(square(50) - square(h*100-50)), h*100)
 });
+
+var bracket = revolvingParametric(function(h, theta) {
+  return new Vector(100, h*100);
+});
+var cubeRadius = function(theta) {
+  var tp = theta/Math.PI - 0.25, thetap = tp * Math.PI;
+  if( tp >= -0.25 && tp < 0.25 ) {
+    return abs(1/cos(thetap));
+  } else if( tp >= 0.25 && tp < 0.75 ) {
+    return abs(1/sin(thetap));
+  } else if( tp >= 0.75 && tp < 1.25 ) {
+    return abs(1/cos(thetap));
+  } else if( tp >= 1.25 ) {
+    return abs(1/sin(thetap));
+  }
+  throw new Error("Invalid value for theta");
+};
+var cube = function(theta) {
+  return piecewise([
+      { range: [0, 0.3],
+	fn: revolvingParametric(function(h) {
+	  return new Vector(h*100*cubeRadius(theta), 0);
+	}).bind({}, theta) },
+      { range: [0.3, 0.7],
+	fn: revolvingParametric(function(h) {
+	  return new Vector(cubeRadius(theta)*100, h*100);
+	}).bind({}, theta) },
+      { range: [0.7, 1],
+	fn: revolvingParametric(function(h) {
+	  return new Vector((1-h)*100*cubeRadius(theta), 100);
+	}).bind({}, theta) }]);
+};
+
 var stlCylinder = new Surface(
   {x: 0, y: -100, z: -50},
   [0, 0, 0],
   function(u, v) {
     var t = 2 * Math.PI * u;
-    return cylinder(t)(v);
+    return cylinder(v, t);
   });
 var stlSphere = new Surface(
   {x: 0, y: 100, z: -50},
   [0, 0, 0],
   function(u, v) {
     var t = 2 * Math.PI * u;
-    return sphere(t, v);
+    return sphere(v, t);
+  });
+var stlCube = new Surface(
+  {x: 0, y: -200, z: -50},
+  [0, 0, 0],
+  function(u, v) {
+    var t = 2 * Math.PI * u;
+    return cube(t)(v);
   });
 
 stlCylinder.addTo(scene);
 stlSphere.addTo(scene);
+stlCube.addTo(scene);
 controls.render();
 

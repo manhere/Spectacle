@@ -8,7 +8,7 @@ var Obstruction = function(Geometry, options) {
       rotation = options.rotation,
       incline = options.incline;
   var x = position.x, y = position.y, z = position.z;
-  var precision = 10;
+  var precision = 100;
   var geometry = construct(Geometry, parameters.concat([precision, precision]));
   var cube = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial());
   cube.overdraw = true;

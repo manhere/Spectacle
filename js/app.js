@@ -14,7 +14,7 @@ var rowLength = ps[0].length;
 var rowCount = ps.length;
 var stlCube = new Surface(
   {x: 0, y: 0, z: -50},
-  [0, 0, 0],
+  [rowLength, rowCount],
   function(u, v) {
     var i = Math.floor(u * (rowLength-1)),
         j = Math.floor(v * (rowCount-1));

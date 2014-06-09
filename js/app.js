@@ -10,24 +10,52 @@ var controls = new Controls(renderer.render.bind(renderer), camera, scene);
 controls.position.z = 0;
 controls.position.x = -500;
 
+var Triangle = function(normal, vertices, attr) {
+  this.normal = normal;
+  this.vertices = vertices;
+  this.attr = attr;
+};
 var ReaderResponse = function(read, offset) {
   this.read = read;
   this.offset = offset;
 };
+var readBytes = function(buffer, offset, count) {
+  // get byte values from a buffer
+  return count == 0 ? [] : [buffer[offset]].concat(readBytes(buffer, offset+1, count-1));
+};
+var bytes = function(buffer, offset, count) {
+  // get the Uint8 array form of a buffer segment
+  var b = readBytes(buffer, offset, count);
+  var a = new ArrayBuffer(b.length),
+      view = new Uint8Array(a);
+  b.forEach(function(b, i) { view[i] = b; });
+  return a;
+};
+
+// A Reader constructor for iterative reading
+var readArray = function(count, item) {
+  return function(buffer, offset) {
+    if( count == 0 ) {
+      return new ReaderResponse([], offset);
+    }
+    var itemRead = item(buffer, offset),
+        rest = readArray(count-1, item)(buffer, itemRead.offset);
+    return new ReaderResponse([itemRead.read].concat(rest.read), rest.offset);
+  };
+};
+
+// Readers for the header message
 var readChar = function(buffer, offset) {
   return new ReaderResponse(String.fromCharCode(buffer[offset]), offset+1);
 };
 var readChars = function(count) {
   return function(buffer, offset) {
-    if( count == 0 ) {
-      return new ReaderResponse("", offset);
-    } else {
-      var read = readChar(buffer, offset),
-	  rest = readChars(count-1)(buffer, offset+1);
-      return new ReaderResponse(read.read + rest.read, rest.offset);
-    }
+    var r = readArray(count, readChar)(buffer, offset);
+    return new ReaderResponse(r.read.join(""), r.offset);
   };
 };
+
+// Readers for numeric data
 var readUint32 = function(buffer, offset) {
   var bs = bytes(buffer, offset, 4);
   return new ReaderResponse(new Uint32Array(bs)[0], offset+4);
@@ -36,29 +64,11 @@ var readUint16 = function(buffer, offset) {
   var bs = bytes(buffer, offset, 2);
   return new ReaderResponse(new Uint16Array(bs)[0], offset+2);
 };
-var readBytes = function(buffer, offset, count) {
-  return count == 0 ? [] : [buffer[offset]].concat(readBytes(buffer, offset+1, count-1));
-};
-var bytes = function(buffer, offset, count) {
-  var b = readBytes(buffer, offset, count);
-  var a = new ArrayBuffer(b.length),
-      view = new Uint8Array(a);
-  b.forEach(function(b, i) { view[i] = b; });
-  return a;
-};
 var readVector = function(buffer, offset) {
   return new ReaderResponse(new Float32Array(bytes(buffer, offset, 12)), offset+12);
 };
-var readVectors = function(count) {
-  return function(buffer, offset) {
-    if( count == 0 ) {
-      return new ReaderResponse([], offset);
-    }
-    var vector = readVector(buffer, offset),
-        rest = readVectors(count-1)(buffer, vector.offset);
-    return new ReaderResponse([vector.read].concat(rest.read), rest.offset);
-  };
-};
+
+// Functions for piping reader functions
 var bind = function(readA, readB, joiner) {
   return function(buffer, offset) {
     var A = readA(buffer, offset),
@@ -73,45 +83,42 @@ var binds = function(reads, joiner) {
     return bind(reads[0], binds(reads.slice(1), joiner), joiner);
   }
 };
+
+// A function to reduce an individual Reader's response
 var perform = function(a, bytes, offset, f) {
   var r = a(bytes, offset);
   return f(r.read, r.offset);
 };
-var floatFromHex = function(hexString) {
-  var a = new ArrayBuffer(4);
-  var view = new Uint8Array(a);
-  var bytes = hexString.replace(/\s/g, "").match(/../g);
-  view[0] = parseInt(bytes[0], 16);
-  view[1] = parseInt(bytes[1], 16);
-  view[2] = parseInt(bytes[2], 16);
-  view[3] = parseInt(bytes[3], 16);
-  return new Float32Array(a)[0];
-};
-var Triangle = function(normal, vertices, attr) {
-  this.normal = normal;
-  this.vertices = vertices;
-  this.attr = attr;
-};
-var handleResponse = function() {
-  var bytes = new Uint8Array(this.response);
+
+// The STL binary file parser
+var parse = function(bytes) {
   var meta = bind(
     readChars(80),
     readUint32,
     function(header, count) {
       return { header: header, count: count };
     });
-  perform(
+  return perform(
     meta, bytes, 0,
-    function(read, offset) {
-      var count = read.count;
-      bind(
-        readVectors(4),
-	readUint16,
-	function(vs, attr) {
-	  var triangle = new Triangle(vs[0], [1,2,3].map(function(i) { return vs[i] }), attr);
-	  console.log(triangle);
-	})(bytes, offset);
+    function(meta, offset) {
+      var readTriangles = readArray(
+        meta.count,
+	bind(
+	  readArray(4, readVector),
+	  readUint16,
+	  function(vs, attr) {
+	    return new Triangle(vs[0], [1,2,3].map(function(i) { return vs[i] }), attr);
+	  }));
+      return {
+        meta: meta,
+	data: readTriangles(bytes, offset)
+      };
     });
+};
+
+var handleResponse = function() {
+  var bytes = new Uint8Array(this.response);
+  console.log(parse(bytes).data);
 };
 var req = new XMLHttpRequest();
 req.onload = handleResponse;

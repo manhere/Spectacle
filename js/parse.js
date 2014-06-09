@@ -1,7 +1,7 @@
 // Data Structures
 // ===============
 var Triangle = function(normal, vertices, attr) {
-  // Float x [Float] x Int
+  // [Float] x [[Float]] x Int
   this.normal = normal;
   this.vertices = vertices;
   this.attr = attr;

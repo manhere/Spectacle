@@ -99,7 +99,7 @@ var parse = function(bytes) {
 	  }));
       return {
         meta: meta,
-	data: readTriangles(bytes, offset)
+	data: readTriangles(bytes, offset).read
       };
     });
 };

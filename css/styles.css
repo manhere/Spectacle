@@ -18,10 +18,20 @@ body {
   left: 0;
   padding: 20px;
   box-sizing: border-box;
-  width: 180px;
+  width: 250px;
   border-right: 1px solid #333;
   height: 100%;
-}
+  }
+  #tools #file {
+    margin-top: 10px;
+    }
+    #tools #file span {
+      font-weight: bold;
+    }
+    #tools #file #files {
+      margin: 0;
+      padding: 0;
+    }
 #map {
   width: 100px;
   height: 100px;
@@ -46,3 +56,4 @@ body {
 .hidden {
   display: none;
 }
+

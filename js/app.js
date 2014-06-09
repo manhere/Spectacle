@@ -7,8 +7,6 @@ var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHei
 
 var scene = new THREE.Scene();
 var controls = new Controls(renderer.render.bind(renderer), camera, scene);
-controls.position.z = 0;
-controls.position.x = -200;
 
 var vectorFromVertex = function(v) {
   return new THREE.Vector3(v[0], v[1], v[2]);
@@ -30,6 +28,12 @@ var renderSTL = function(triangles) {
   object.position.y = 0;
   object.position.z = 0;
   scene.add(object);
+  triangles.forEach(function(triangle) {
+    scene.add(
+      drawVector(
+        vectorsFromVertices(triangle.vertices)[0], 
+	vectorFromVertex(triangle.normal).normalize().multiplyScalar(10)));
+  });
 };
 var handleSTL = function(evt) {
   var files = evt.target.files;
@@ -39,6 +43,7 @@ var handleSTL = function(evt) {
     var triangles = parse(bytes).data;
     renderSTL(triangles);
   };
+  scene.children.map(scene.remove.bind(scene));
   reader.readAsArrayBuffer(files[0]);
 };
 document.getElementById('files').addEventListener('change', handleSTL, false);

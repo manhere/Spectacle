@@ -81,6 +81,13 @@ var drawLine = function(d, to) {
   var material = new THREE.LineBasicMaterial({ color: colors[d] });
   return new THREE.Line(geometry, material);
 };
+var drawVector = function(pos, v) {
+  var geometry = new THREE.Geometry();
+  geometry.vertices.push(pos);
+  geometry.vertices.push(pos.clone().add(v));
+  var material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+  return new THREE.Line(geometry, material);
+};
 var formZeroBasis = function(x, y, z) {
   if( x && y && z ) {
     throw new Error("Cannot form basis around null.");

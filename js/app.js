@@ -31,7 +31,7 @@ var renderSTL = function(triangles) {
   object.position.z = 0;
   scene.add(object);
 };
-var handleFile = function(evt) {
+var handleSTL = function(evt) {
   var files = evt.target.files;
   var reader = new FileReader();
   reader.onload = function(e) {
@@ -41,7 +41,17 @@ var handleFile = function(evt) {
   };
   reader.readAsArrayBuffer(files[0]);
 };
-document.getElementById('files').addEventListener('change', handleFile, false);
+var handleJSON = function(evt) {
+  var files = evt.target.files;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var ps = JSON.parse(e.target.result);
+    console.log(ps);
+  };
+  reader.readAsBinaryString(files[0]);
+};
+document.getElementById('files').addEventListener('change', handleSTL, false);
+document.getElementById('json').addEventListener('change', handleJSON, false);
 
 controls.render();
 

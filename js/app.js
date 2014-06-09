@@ -48,9 +48,14 @@ var handleJSON = function(evt) {
     var ps = JSON.parse(e.target.result), fs = [];
     for( var i = 0; i < ps.length-1; i++ ) {
       for( var j = 0; j < ps[i].length-1; j++ ) {
-        var aa = ps[i][j], ab = ps[i][j+1], ba = ps[i+1][j+1], bb = ps[i+1][j+1];
+        var aa = ps[i][j], ab = ps[i][j+1], bb = ps[i+1][j+1];
         fs.push(new Triangle(null, [aa, ab, bb], 0));
-        fs.push(new Triangle(null, [bb, ba, aa], 0));
+      }
+    }
+    for( var i = 1; i < ps.length; i++ ) {
+      for( var j = 1; j < ps[i].length; j++ ) {
+        var aa = ps[i][j], ab = ps[i][j-1], bb = ps[i-1][j-1];
+        fs.push(new Triangle(null, [aa, ab, bb], 0));
       }
     }
     renderSTL(fs);

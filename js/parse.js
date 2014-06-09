@@ -95,6 +95,7 @@ var parse = function(bytes) {
     function(header, count) {
       return new STLMeta(header, count);
     });
+  // TODO: make efficiency improvements to support parsing of large files.
   return perform(
     meta, bytes, 0,
     function(meta, offset) {

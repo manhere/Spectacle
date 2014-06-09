@@ -41,20 +41,7 @@ var handleSTL = function(evt) {
   };
   reader.readAsArrayBuffer(files[0]);
 };
-var handleJSON= function(evt) {
-  var files = evt.target.files;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    console.log(e.target.result);
-    var fs = JSON.parse(e.target.result).map(function(f) {
-      return new Triangle(null, f, null);
-    });
-    renderSTL(fs);
-  };
-  reader.readAsBinaryString(files[0]);
-};
 document.getElementById('files').addEventListener('change', handleSTL, false);
-document.getElementById('json').addEventListener('change', handleJSON, false);
 
 controls.render();
 

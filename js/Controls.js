@@ -2,7 +2,7 @@ var mode = { rotate: true };
 var Controls = function(render, camera, scene) {
   this.angleLR = 0;
   this.angleUD = 0;
-  this.position = {x: -200, y: 0, z: 100};
+  this.position = {x: -500, y: 0, z: 0};
   this.hypZ = function() {
     return Math.sqrt(_2(this.position.x) + _2(this.position.y) + _2(this.position.z));
   };

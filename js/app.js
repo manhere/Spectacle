@@ -28,12 +28,6 @@ var renderSTL = function(triangles) {
   object.position.y = 0;
   object.position.z = 0;
   scene.add(object);
-  triangles.forEach(function(triangle) {
-    scene.add(
-      drawVector(
-        vectorsFromVertices(triangle.vertices)[0], 
-	vectorFromVertex(triangle.normal).normalize().multiplyScalar(10)));
-  });
 };
 var handleSTL = function(evt) {
   var files = evt.target.files;

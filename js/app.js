@@ -41,23 +41,14 @@ var handleSTL = function(evt) {
   };
   reader.readAsArrayBuffer(files[0]);
 };
-var handleJSON = function(evt) {
+var handleJSON= function(evt) {
   var files = evt.target.files;
   var reader = new FileReader();
   reader.onload = function(e) {
-    var ps = JSON.parse(e.target.result), fs = [];
-    for( var i = 0; i < ps.length-1; i++ ) {
-      for( var j = 0; j < ps[i].length-1; j++ ) {
-        var aa = ps[i][j], ab = ps[i][j+1], bb = ps[i+1][j+1];
-        fs.push(new Triangle(null, [aa, ab, bb], 0));
-      }
-    }
-    for( var i = 1; i < ps.length; i++ ) {
-      for( var j = 1; j < ps[i].length; j++ ) {
-        var aa = ps[i][j], ab = ps[i][j-1], bb = ps[i-1][j-1];
-        fs.push(new Triangle(null, [aa, ab, bb], 0));
-      }
-    }
+    console.log(e.target.result);
+    var fs = JSON.parse(e.target.result).map(function(f) {
+      return new Triangle(null, f, null);
+    });
     renderSTL(fs);
   };
   reader.readAsBinaryString(files[0]);

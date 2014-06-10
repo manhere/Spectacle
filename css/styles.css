@@ -24,10 +24,12 @@ body {
   left: 0;
   padding: 20px;
   box-sizing: border-box;
+  margin: 0;
   width: 250px;
   border-right: 1px solid #333;
   height: 100%;
   overflow: scroll;
+  overflow-x: hidden;
   }
   #tools #file #files {
     margin: 0;

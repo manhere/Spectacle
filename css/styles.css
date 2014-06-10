@@ -32,6 +32,16 @@ body {
       margin: 0;
       padding: 0;
     }
+  #tools #objects {
+    margin-top: 10px; 
+    }
+    #tools #objects ul {
+      margin: 0;
+      padding: 0;
+    }
+    #tools #objects span {
+      font-weight: bold;
+    }
 #map {
   width: 100px;
   height: 100px;

@@ -1,32 +1,27 @@
 var mode = { rotate: true };
 var Controls = function(render, camera, scene) {
-  this.angleLR = 0;
-  this.angleUD = 0;
-  this.position = {x: -500, y: 0, z: 0};
+  this.sceneRender = render;
+  this.lookingVector = new THREE.Vector3(1, 0, 0);
+  this.position = new THREE.Vector3(-60, 0, 0);
   this.hypZ = function() {
     return Math.sqrt(_2(this.position.x) + _2(this.position.y) + _2(this.position.z));
   };
   this.camera = camera;
   this.scene = scene;
   this.rotate = function(right, left, up, down) {
-    this.angleLR += (right ? 1 : (left ? -1 : 0)) * Math.PI/50;
-    this.angleUD += (up ? 1 : (down ? -1 : 0)) * Math.PI/50;
+    this.lookingVector.add(new THREE.Vector3((right ? 1 : (left ? -1 : 0)) * 0.05, 0, (up ? 1 : (down ? -1 : 0)) * 0.05));
   };
   this.move = function(left, right, up, down) {
-    this.position.x += (left ? 1 : (right ? -1 : 0)) * 10;
-    this.position.y += (up ? 1 : (down ? -1 : 0)) * 10;
+    this.position.add(new THREE.Vector3((left ? 1 : (right ? -1 : 0)) * 10, 0, (up ? 1 : (down ? -1 : 0)) * 10));
   };
-  this.sceneRender = render;
   this.face = function(key) {
-    var angle = [
-      [0, 0],
-      [1, 0],
-      [2, 0],
-      [3, 0],
-      [0, -0.99]][key - 1];
-    var angleLR = angle[0] * Math.PI/2,
-	angleUD = angle[1] * Math.PI/2;
-    this.takeAngles(angleLR, angleUD);
+    this.lookingVector = [
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(0, -1, 0),
+      new THREE.Vector3(0, 0, -1)][key - 1];
+    this.position = this.lookingVector.clone().normalize().multiplyScalar(-60);
   };
   document.addEventListener('keydown', function(evt) {
     if( [65, 68, 87, 83].indexOf(evt.keyCode) != -1) {
@@ -34,15 +29,16 @@ var Controls = function(render, camera, scene) {
       this.rotate(
         evt.keyCode == 65, evt.keyCode == 68,
         evt.keyCode == 87, evt.keyCode == 83);
-      render();
     } else if( [37, 38, 39, 40].indexOf(evt.keyCode) != -1 ) {
       evt.preventDefault();
       this.move(
         evt.keyCode == 39, evt.keyCode == 37,
         evt.keyCode == 38, evt.keyCode == 40);
     } else if( [49, 50, 51, 52, 53].indexOf(evt.keyCode) != -1 ) {
+      evt.preventDefault();
       this.face(evt.keyCode - 48);
     }
+    render();
   }.bind(this));
   var start;
   document.addEventListener('mousedown', function(evt) {
@@ -52,45 +48,36 @@ var Controls = function(render, camera, scene) {
     start = undefined;
   });
   this.zoom = function(delta) {
-    this.position.x += delta * Math.cos(this.angleLR);
-    this.position.y += delta * Math.sin(this.angleLR);
-    this.position.z += delta * Math.tan(this.angleUD);
+    this.position.add(this.lookingVector.clone().multiplyScalar(-delta));
   };
   document.addEventListener('mousewheel', function(evt) {
     evt.preventDefault();
     this.zoom(evt.wheelDelta/5);
   }.bind(this));
-  this.takeAngles = function(LR, UD) {
-    if( UD <= 0 && UD >= -Math.PI/2 ) {
-      var hypZ = this.hypZ();
-      this.angleLR = LR;
-      this.angleUD = UD;
-      this.position.z = Math.sin(Math.PI+this.angleUD)*hypZ;
-      var newHyp = Math.cos(this.angleUD)*hypZ;
-      this.position.x = Math.cos(Math.PI+this.angleLR)*newHyp;
-      this.position.y = Math.sin(Math.PI+this.angleLR)*newHyp;
-    }
-  };
   document.addEventListener('mousemove', function(evt) {
     if( !start ) return;
     var end = [evt.x, evt.y],
 	delta = end.map(function(x, i) { return x - start[i]; }),
 	x = delta[0], y = delta[1];
-    var xTheta = this.angleLR - Math.PI/2,
-	yTheta = this.angleUD - Math.PI/2,
-	xv = [Math.cos(xTheta) * x, Math.sin(xTheta) * x, 0],
-	yv = [0, Math.cos(yTheta) * y, Math.sin(yTheta) * y];
     start = end;
     if( mode.rotate ) {
-      var dLR = -x/10 * Math.PI/50,
-	  dUD = -y/10 * Math.PI/50;
-      this.takeAngles(this.angleLR + dLR, this.angleUD + dUD);
+      var dxy = -x/10 * Math.PI/50,
+	  dz = y/10 * Math.PI/50;
+      var xy = Math.atan2(this.position.y, this.position.x) + dxy,
+          z  = Math.atan2(this.position.z, sqrt(_2(this.position.x) + _2(this.position.y))) + dz;
+      var zpos = Math.sin(z) * this.hypZ(),
+          r = Math.cos(z) * this.hypZ();
+      this.position = new THREE.Vector3(r * Math.cos(xy), r * Math.sin(xy), zpos);
+      this.lookingVector = this.position.clone().normalize().multiplyScalar(-1);
     } else if( mode.zoom ) {
       this.zoom(y);
     } else {
-      this.position.x -= (xv[0]+yv[0])/10;
-      this.position.y -= (xv[1]+yv[1])/10;
-      this.position.z -= (xv[2]+yv[2])/10;
+      // panning
+      var basis = [
+        this.lookingVector.clone().normalize(),
+	new THREE.Vector3(-this.lookingVector.y, this.lookingVector.x, 0),
+	new THREE.Vector3(0, 0, 1)];
+      this.position.add(inBasis(basis, 0, x/6, y/6));
     }
   }.bind(this));
   [].map.call(
@@ -121,10 +108,7 @@ var Controls = function(render, camera, scene) {
 Controls.prototype.render = function() {
   this.camera.position = this.position;
   this.camera.up = new THREE.Vector3(0,0,1);
-  this.camera.lookAt(
-    new THREE.Vector3(Math.cos(this.angleLR) * 200, 
-      Math.sin(this.angleLR) * 200, 
-      Math.tan(this.angleUD) * 200));
+  this.camera.lookAt(this.position.clone().add(this.lookingVector.clone().multiplyScalar(10)));
   this.sceneRender(this.scene, this.camera);
   requestAnimationFrame(this.render.bind(this));
 };

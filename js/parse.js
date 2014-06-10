@@ -26,7 +26,9 @@ var STLContent = function(meta, triangles) {
 // =========
 var readBytes = function(buffer, offset, count) {
   // ArrayBuffer -> Int -> Int -> [Byte]
-  return count == 0 ? [] : [buffer[offset]].concat(readBytes(buffer, offset+1, count-1));
+  var bs = [];
+  for( var i = 0; i < count; i++ ) { bs.push(buffer[offset+i]); }
+  return bs;
 };
 var bytes = function(buffer, offset, count) {
   // ArrayBuffer -> Int -> Int -> ArrayBuffer
@@ -49,10 +51,13 @@ var bind = function(readA, readB, joiner) {
 var readArray = function(count, item) {
   // Int -> (ArrayBuffer -> Int -> a) -> (ArrayBuffer -> Int -> [a])
   return function(buffer, offset) {
-    if( count == 0 ) {
-      return new ReaderResponse([], offset);
+    var xs = [];
+    for(var i = 0; i < count; i++) {
+      var read = item(buffer, offset);
+      offset = read.offset;
+      xs.push(read.read);
     }
-    return bind(item, readArray(count-1, item), function(A, B) { return [A].concat(B); })(buffer, offset);
+    return new ReaderResponse(xs, offset);
   };
 };
 
@@ -87,6 +92,16 @@ var perform = function(a, bytes, offset, f) {
   return f(r.read, r.offset);
 };
 
+var readTriangle = function(buffer, offset) {
+  var vResp = readArray(4, readVector)(buffer, offset),
+      vs = vResp.read,
+      attrResp = readUint16(buffer, vResp.offset),
+      attr = attrResp.read,
+      bump = attrResp.offset;
+  var n = vs[0], v1 = vs[1], v2 = vs[2], v3 = vs[3];
+  return new ReaderResponse(new Triangle(n, [v1, v2, v3], attr), offset + 12 + 12*3 + 2);
+};
+
 var parse = function(bytes) {
   // ArrayBuffer -> STLContent
   var meta = bind(
@@ -95,18 +110,12 @@ var parse = function(bytes) {
     function(header, count) {
       return new STLMeta(header, count);
     });
-  // TODO: make efficiency improvements to support parsing of large files.
   return perform(
     meta, bytes, 0,
     function(meta, offset) {
       var readTriangles = readArray(
         meta.count,
-	bind(
-	  readArray(4, readVector),
-	  readUint16,
-	  function(vs, attr) {
-	    return new Triangle(vs[0], [1,2,3].map(function(i) { return vs[i] }), attr);
-	  }));
+	readTriangle);
       return new STLContent(meta, readTriangles(bytes, offset).read);
     });
 };

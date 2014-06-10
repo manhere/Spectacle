@@ -16,16 +16,21 @@ var vectorsFromVertices = function(vs) {
 };
 var objects = [];
 var focus = "*";
-var xRange = [6000, -6000];
+var xRange = [6000, -6000], yRange = [6000, -6000], zRange = [6000, -6000];
 var withinBounds = function(object) {
   var inputs = [].map.call(
     document.querySelectorAll("#visibleRange input"),
-    function(range) {
-      return range.value/100 * (xRange[1] - xRange[0]) + xRange[0];
+    function(range, i) {
+      var maxmin = [xRange, xRange, yRange, yRange, zRange, zRange][i];
+      return range.value/100 * (maxmin[1] - maxmin[0]) + maxmin[0];
     });
-  var xRestriction = inputs.slice(0,2);
+  var xRestriction = inputs.slice(0,2), 
+      yRestriction = inputs.slice(2,4), 
+      zRestriction = inputs.slice(4,6);
   var p = object.position, x = p.x, y = p.y, z = p.z;
-  return x >= xRestriction[0] && x <= xRestriction[1];
+  return x >= xRestriction[0] && x <= xRestriction[1] &&
+    y >= yRestriction[0] && y <= yRestriction[1] &&
+    z >= zRestriction[0] && z <= zRestriction[1];
 };
 var renderFocus = function() {
   objects.forEach(function(object) {
@@ -101,6 +106,10 @@ var renderSTL = function(triangles, name) {
   // update max and min
   xRange[0] = xRange[0] < center.x ? xRange[0] : center.x;
   xRange[1] = xRange[1] > center.x ? xRange[1] : center.x;
+  yRange[0] = yRange[0] < center.y ? yRange[0] : center.y;
+  yRange[1] = yRange[1] > center.y ? yRange[1] : center.y;
+  zRange[0] = zRange[0] < center.z ? zRange[0] : center.z;
+  zRange[1] = zRange[1] > center.z ? zRange[1] : center.z;
 
   objects.push({ name: name, position: center });
   renderObjects(objects);

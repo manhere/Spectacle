@@ -11,6 +11,12 @@ body {
   left: 50%;
   margin-left: -451px;
 }
+.block {
+  margin-top: 10px;
+  }
+  .block span {
+    font-weight: bold;
+  }
 #tools {
   background: white;
   position: absolute;
@@ -22,26 +28,14 @@ body {
   border-right: 1px solid #333;
   height: 100%;
   }
-  #tools #file {
-    margin-top: 10px;
-    }
-    #tools #file span {
-      font-weight: bold;
-    }
-    #tools #file #files {
-      margin: 0;
-      padding: 0;
-    }
-  #tools #objects {
-    margin-top: 10px; 
-    }
-    #tools #objects ul {
-      margin: 0;
-      padding: 0;
-    }
-    #tools #objects span {
-      font-weight: bold;
-    }
+  #tools #file #files {
+    margin: 0;
+    padding: 0;
+  }
+  #tools #objects ul {
+    margin: 0;
+    padding: 0;
+  }
 #map {
   width: 100px;
   height: 100px;

@@ -19,11 +19,16 @@
 	<li><a href="#" id="view4">West View</a></li>
 	<li><a href="#" id="view5">Top View</a></li>
       </ul>
-      <div id="file">
+      <div id="file" class="block">
 	<span>Select an STL file</span>
 	<input type="file" id="files" name="files[]" multiple />
       </div>
-      <div id="objects"></div>
+      <div id="visibleRange" class="block">
+	<span>Visible range of objects</span>
+        <input type="range" id="xMin" min="0" max="100" value="0">
+        <input type="range" id="xMax" min="0" max="100" value="100">
+      </div>
+      <div id="objects" class="block"></div>
     </div>
     <script src="js/utils.js"></script>
     <script src="js/Controls.js"></script>

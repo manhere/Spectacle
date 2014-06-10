@@ -1,5 +1,5 @@
 var mode = { rotate: true };
-var Controls = function(render, camera, scene) {
+var Controls = function(render, camera, scene, elm) {
   this.sceneRender = render;
   this.lookingVector = new THREE.Vector3(1, 0, 0);
   this.position = new THREE.Vector3(-2000, 0, 100);
@@ -41,20 +41,20 @@ var Controls = function(render, camera, scene) {
     render();
   }.bind(this));
   var start;
-  document.addEventListener('mousedown', function(evt) {
+  elm.addEventListener('mousedown', function(evt) {
     start = [evt.x, evt.y];
   });
-  document.addEventListener('mouseup', function(evt) {
+  elm.addEventListener('mouseup', function(evt) {
     start = undefined;
   });
   this.zoom = function(delta) {
     this.position.add(this.lookingVector.clone().multiplyScalar(-delta));
   };
-  document.addEventListener('mousewheel', function(evt) {
+  elm.addEventListener('mousewheel', function(evt) {
     evt.preventDefault();
     this.zoom(evt.wheelDelta/5);
   }.bind(this));
-  document.addEventListener('mousemove', function(evt) {
+  elm.addEventListener('mousemove', function(evt) {
     if( !start ) return;
     var end = [evt.x, evt.y],
 	delta = end.map(function(x, i) { return x - start[i]; }),

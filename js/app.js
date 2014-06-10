@@ -17,6 +17,18 @@ var vectorsFromVertices = function(vs) {
 var objects = [];
 var focus = "*";
 var xRange = [6000, -6000], yRange = [6000, -6000], zRange = [6000, -6000];
+var inRange = function(range, x) {
+  // JavaScript floats are too annoying, compare ints
+  return Math.floor(x) >= Math.floor(range[0])
+    && Math.floor(x) <= Math.floor(range[1]);
+};
+var segment = function(xs, size) {
+  if( xs.length <= size ) {
+    return [xs];
+  } else {
+    return [xs.slice(0,2)].concat(segment(xs.slice(2), size));
+  }
+};
 var withinBounds = function(object) {
   var inputs = [].map.call(
     document.querySelectorAll("#visibleRange input"),
@@ -24,13 +36,10 @@ var withinBounds = function(object) {
       var maxmin = [xRange, xRange, yRange, yRange, zRange, zRange][i];
       return range.value/100 * (maxmin[1] - maxmin[0]) + maxmin[0];
     });
-  var xRestriction = inputs.slice(0,2), 
-      yRestriction = inputs.slice(2,4), 
-      zRestriction = inputs.slice(4,6);
   var p = object.position, x = p.x, y = p.y, z = p.z;
-  return x >= xRestriction[0] && x <= xRestriction[1] &&
-    y >= yRestriction[0] && y <= yRestriction[1] &&
-    z >= zRestriction[0] && z <= zRestriction[1];
+  return segment(inputs, 2).map(function(range, i) {
+    return inRange(range, [x,y,z][i]);
+  }).reduce(function(a, x) { return a && x; }, true);
 };
 var renderFocus = function() {
   objects.forEach(function(object) {

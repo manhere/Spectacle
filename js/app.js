@@ -20,8 +20,8 @@ var renderSTL = function(triangles) {
     var vs = vectorsFromVertices(triangle.vertices);
     [].push.apply(geo.vertices, vs);
     geo.faces.push(new THREE.Face3(i*3, i*3+1, i*3+2));
-    geo.computeFaceNormals();
   });
+  geo.computeFaceNormals();
   var object = new THREE.Mesh(geo, new THREE.MeshNormalMaterial());
   object.overdraw = true;
   object.position.x = 0;

@@ -99,7 +99,7 @@ var readTriangle = function(buffer, offset) {
       attr = attrResp.read,
       bump = attrResp.offset;
   var n = vs[0], v1 = vs[1], v2 = vs[2], v3 = vs[3];
-  return new ReaderResponse(new Triangle(n, [v1, v2, v3], attr), offset + 12 + 12*3 + 2);
+  return new ReaderResponse(new Triangle(n, [v1, v2, v3], attr), bump);
 };
 
 var parse = function(bytes) {
@@ -114,7 +114,7 @@ var parse = function(bytes) {
     meta, bytes, 0,
     function(meta, offset) {
       var readTriangles = readArray(
-        meta.count,
+	meta.count,
 	readTriangle);
       return new STLContent(meta, readTriangles(bytes, offset).read);
     });

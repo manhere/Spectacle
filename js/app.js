@@ -23,7 +23,7 @@ var listenForObjectSelect = function() {
         var focus = a.innerText;
         evt.preventDefault();
 	objectNames.forEach(function(name) {
-	  if( name == focus ) {
+	  if( name == focus || focus == "*" ) {
 	    scene.getObjectByName(name).material = new THREE.MeshNormalMaterial();
 	  } else {
 	    scene.getObjectByName(name).material = new THREE.MeshBasicMaterial({
@@ -41,7 +41,7 @@ var renderNames = function(names) {
   var span = document.createElement("span");
   span.innerText = "Select an object";
   objects.appendChild(span);
-  names.map(function(n) {
+  names.concat(["*"]).map(function(n) {
     var li = document.createElement("li");
     var a = document.createElement("a");
     a.innerText = n;

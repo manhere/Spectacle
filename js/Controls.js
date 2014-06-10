@@ -1,5 +1,6 @@
 var mode = { rotate: true };
 var Controls = function(render, camera, scene) {
+  this.sceneRender = render;
   this.lookingVector = new THREE.Vector3(1, 0, 0);
   this.position = new THREE.Vector3(-60, 0, 0);
   this.hypZ = function() {
@@ -108,6 +109,6 @@ Controls.prototype.render = function() {
   this.camera.position = this.position;
   this.camera.up = new THREE.Vector3(0,0,1);
   this.camera.lookAt(this.position.clone().add(this.lookingVector.clone().multiplyScalar(10)));
-  (this.scene.renderMap || function(){}).bind(this.scene)(this.position.x, this.position.y);
+  this.sceneRender(this.scene, this.camera);
   requestAnimationFrame(this.render.bind(this));
 };

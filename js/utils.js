@@ -116,15 +116,20 @@ var formBasis = function(n) {
   zprime.normalize();
   var xprime;
   if( zprime.z == 0 ) {
-    xprime = new THREE.Vector3(-(zprime.y + 2*zprime.z)/zprime.x, 1, 2);
+    xprime = new THREE.Vector3(-zprime.y/zprime.x, 1, 0);
   } else {
-    xprime = new THREE.Vector3(1, 2, -(zprime.x + 2*zprime.y)/zprime.z);
+    xprime = new THREE.Vector3(0, 1, -zprime.y/zprime.z);
   }
   xprime.normalize();
   var yprime = new THREE.Vector3();
   yprime.crossVectors(zprime, xprime);
   yprime.normalize();
   return [xprime, yprime, zprime];
+};
+var inBasis = function(basis, x, y, z) {
+  return basis[0].multiplyScalar(x).add(
+           basis[1].multiplyScalar(y).add(
+	     basis[2].multiplyScalar(z)));
 };
 var renderLines = function(ls, scene) {
   ls.map(function(v) {
@@ -147,4 +152,3 @@ var surfaceBasisTransformer = function(basis) {
     };
   };
 };
-

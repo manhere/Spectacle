@@ -2,7 +2,7 @@ var mode = { rotate: true };
 var Controls = function(render, camera, scene) {
   this.sceneRender = render;
   this.lookingVector = new THREE.Vector3(1, 0, 0);
-  this.position = new THREE.Vector3(-60, 0, 0);
+  this.position = new THREE.Vector3(-500, 0, 0);
   this.hypZ = function() {
     return Math.sqrt(_2(this.position.x) + _2(this.position.y) + _2(this.position.z));
   };
@@ -21,7 +21,7 @@ var Controls = function(render, camera, scene) {
       new THREE.Vector3(-1, 0, 0),
       new THREE.Vector3(0, -1, 0),
       new THREE.Vector3(0, 0, -1)][key - 1];
-    this.position = this.lookingVector.clone().normalize().multiplyScalar(-60);
+    this.position = this.lookingVector.clone().normalize().multiplyScalar(-500);
   };
   document.addEventListener('keydown', function(evt) {
     if( [65, 68, 87, 83].indexOf(evt.keyCode) != -1) {

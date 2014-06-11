@@ -109,8 +109,6 @@ var mutators = (function() {
       return [Math.min(p, range[0]), Math.max(p, range[1])];
     });
 
-    findCompositeFacets(triangles);
-
     // update and render object list
     objects.push({ name: name,
       position: center,
@@ -133,7 +131,10 @@ var handleSTL = function(evt) {
     reader.onload = function(e) {
       var bytes = new Uint8Array(e.target.result);
       var triangles = parse(bytes).data;
-      renderSTL(triangles, file.name);
+      var composites = findCompositeFacets(triangles);
+      composites.forEach(function(c, i) {
+	renderSTL(c, file.name + " c"+i);
+      });
     };
     reader.readAsArrayBuffer(file);
   });

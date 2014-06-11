@@ -97,9 +97,8 @@ var renderSTL = function(triangles, name) {
     var vs = vectorsFromVertices(triangle.vertices);
     [].push.apply(allVs, vs);
     [].push.apply(geo.vertices, vs);
-    geo.faces.push(new THREE.Face3(i*3, i*3+1, i*3+2));
+    geo.faces.push(new THREE.Face3(i*3, i*3+1, i*3+2, vectorFromVertex(triangle.normal)));
   });
-  geo.computeFaceNormals();
   var object = new THREE.Mesh(geo, new THREE.MeshNormalMaterial());
   object.name = name;
   object.overdraw = true;

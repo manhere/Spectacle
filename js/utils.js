@@ -30,6 +30,12 @@ var inRange = function(range, x) {
   return Math.floor(x) >= Math.floor(range[0])
     && Math.floor(x) <= Math.floor(range[1]);
 };
+var vectorFromVertex = function(v) {
+  return new THREE.Vector3(v[0], v[1], v[2]);
+};
+var vectorsFromVertices = function(vs) {
+  return vs.map(vectorFromVertex);
+};
 var segment = function(xs, size) {
   if( xs.length <= size ) {
     return [xs];

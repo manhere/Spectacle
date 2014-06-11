@@ -8,51 +8,13 @@ var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHei
 var scene = new THREE.Scene();
 var controls = new Controls(renderer.render.bind(renderer), camera, scene, renderer.domElement);
 
-var vectorFromVertex = function(v) {
-  return new THREE.Vector3(v[0], v[1], v[2]);
-};
-var vectorsFromVertices = function(vs) {
-  return vs.map(vectorFromVertex);
-};
-var objects = [];
-var focus = "*";
-var xRange = [6000, -6000], yRange = [6000, -6000], zRange = [6000, -6000];
-var withinBounds = function(object) {
-  var inputs = [].map.call(
-    document.querySelectorAll("#visibleRange input"),
-    function(range, i) {
-      var maxmin = [xRange, xRange, yRange, yRange, zRange, zRange][i];
-      return range.value/100 * (maxmin[1] - maxmin[0]) + maxmin[0];
-    });
-  var p = object.position, x = p.x, y = p.y, z = p.z;
-  return segment(inputs, 2).map(function(range, i) {
-    return inRange(range, [x,y,z][i]);
-  }).reduce(function(a, x) { return a && x; }, true);
-};
-var renderFocus = function() {
-  objects.forEach(function(object) {
-    var name = object.name;
-    if( !withinBounds(object) ) {
-      scene.getObjectByName(name).visible = false;
-    } else if( name == focus || focus == "*" ) {
-      scene.getObjectByName(name).visible = true;
-      scene.getObjectByName(name).material = new THREE.MeshNormalMaterial();
-    } else {
-      scene.getObjectByName(name).visible = true;
-      scene.getObjectByName(name).material = new THREE.MeshBasicMaterial({
-	color: 0xc4c4c4, wireframe: true, wireframe_linewidth: 10
-      });
-    }
-  });
-};
-var listenForObjectSelect = function() {
+var listenForObjectSelect = function(objects) {
   [].forEach.call(
     document.querySelectorAll("#objects a"),
     function(a) {
       a.addEventListener("click", function(evt) {
-        focus = a.innerText;
         evt.preventDefault();
-	renderFocus();
+	renderFocus(a.innerText);
       });
     });
 };
@@ -76,40 +38,83 @@ var renderObjects = function(objects) {
     ul.appendChild(li);
   });
   wrapper.appendChild(ul);
-  listenForObjectSelect();
+  listenForObjectSelect(objects);
 };
-var renderSTL = function(triangles, name) {
-  var geo = new THREE.Geometry();
-  var allVs = [];
-  triangles.forEach(function(triangle, i) {
-    var vs = vectorsFromVertices(triangle.vertices);
-    [].push.apply(allVs, vs);
-    [].push.apply(geo.vertices, vs);
-    geo.faces.push(new THREE.Face3(i*3, i*3+1, i*3+2, vectorFromVertex(triangle.normal)));
-  });
-  var object = new THREE.Mesh(geo, new THREE.MeshNormalMaterial());
-  object.name = name;
-  object.overdraw = true;
-  object.position.x = 0;
-  object.position.y = 0;
-  object.position.z = 0;
-  scene.add(object);
 
-  var center = allVs.reduce(function(a, x) {
-    return a.add(x);
-  }, new THREE.Vector3(0,0,0)).multiplyScalar(1/allVs.length);
+var mutators = (function() {
+  var objects = [];
+  var focus = "*";
+  var xRange = [6000, -6000], yRange = [6000, -6000], zRange = [6000, -6000];
+  var ranges = [[6000, -6000], [6000, -6000], [6000, -6000]];
+  var withinBounds = function(object) {
+    var inputs = [].map.call(
+      document.querySelectorAll("#visibleRange input"),
+      function(range, i) {
+	var maxmin = [xRange, xRange, yRange, yRange, zRange, zRange][i];
+	return range.value/100 * (maxmin[1] - maxmin[0]) + maxmin[0];
+      });
+    var p = object.position, x = p.x, y = p.y, z = p.z;
+    return segment(inputs, 2).map(function(range, i) {
+      return inRange(range, [x,y,z][i]);
+    }).reduce(function(a, x) { return a && x; }, true);
+  };
+  var renderSTL = function(triangles, name) {
+    var geo = new THREE.Geometry();
+    var allVs = [];
+    triangles.forEach(function(triangle, i) {
+      var vs = vectorsFromVertices(triangle.vertices);
+      [].push.apply(allVs, vs);
+      [].push.apply(geo.vertices, vs);
+      geo.faces.push(new THREE.Face3(i*3, i*3+1, i*3+2, vectorFromVertex(triangle.normal)));
+    });
+    var object = new THREE.Mesh(geo, new THREE.MeshNormalMaterial());
+    object.name = name;
+    object.overdraw = true;
+    object.position.x = 0;
+    object.position.y = 0;
+    object.position.z = 0;
+    scene.add(object);
 
-  // update max and min
-  xRange[0] = xRange[0] < center.x ? xRange[0] : center.x;
-  xRange[1] = xRange[1] > center.x ? xRange[1] : center.x;
-  yRange[0] = yRange[0] < center.y ? yRange[0] : center.y;
-  yRange[1] = yRange[1] > center.y ? yRange[1] : center.y;
-  zRange[0] = zRange[0] < center.z ? zRange[0] : center.z;
-  zRange[1] = zRange[1] > center.z ? zRange[1] : center.z;
+    var center = allVs.reduce(function(a, x) {
+      return a.add(x);
+    }, new THREE.Vector3(0,0,0)).multiplyScalar(1/allVs.length);
 
-  objects.push({ name: name, position: center });
-  renderObjects(objects);
-};
+    // update max and min
+    xRange[0] = xRange[0] < center.x ? xRange[0] : center.x;
+    xRange[1] = xRange[1] > center.x ? xRange[1] : center.x;
+    yRange[0] = yRange[0] < center.y ? yRange[0] : center.y;
+    yRange[1] = yRange[1] > center.y ? yRange[1] : center.y;
+    zRange[0] = zRange[0] < center.z ? zRange[0] : center.z;
+    zRange[1] = zRange[1] > center.z ? zRange[1] : center.z;
+
+    objects.push({ name: name, position: center });
+    renderObjects(objects);
+  };
+  var renderFocus = function(f) {
+    focus = typeof f == 'string' ? f : focus;
+    objects.forEach(function(object) {
+      var name = object.name;
+      if( !withinBounds(object) ) {
+	scene.getObjectByName(name).visible = false;
+      } else if( name == focus || focus == "*" ) {
+	scene.getObjectByName(name).visible = true;
+	scene.getObjectByName(name).material = new THREE.MeshNormalMaterial();
+      } else {
+	scene.getObjectByName(name).visible = true;
+	scene.getObjectByName(name).material = new THREE.MeshBasicMaterial({
+	  color: 0xc4c4c4, wireframe: true, wireframe_linewidth: 10
+	});
+      }
+    });
+  };
+  return { renderSTL: renderSTL,
+    withinBounds: withinBounds,
+    renderFocus: renderFocus };
+}());
+var renderSTL = mutators.renderSTL,
+    withinBounds = mutators.withinBounds,
+    renderFocus = mutators.renderFocus;
+
 var handleSTL = function(evt) {
   [].forEach.call(evt.target.files, function(file) {
     var reader = new FileReader();

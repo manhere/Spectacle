@@ -17,18 +17,6 @@ var vectorsFromVertices = function(vs) {
 var objects = [];
 var focus = "*";
 var xRange = [6000, -6000], yRange = [6000, -6000], zRange = [6000, -6000];
-var inRange = function(range, x) {
-  // JavaScript floats are too annoying, compare ints
-  return Math.floor(x) >= Math.floor(range[0])
-    && Math.floor(x) <= Math.floor(range[1]);
-};
-var segment = function(xs, size) {
-  if( xs.length <= size ) {
-    return [xs];
-  } else {
-    return [xs.slice(0,2)].concat(segment(xs.slice(2), size));
-  }
-};
 var withinBounds = function(object) {
   var inputs = [].map.call(
     document.querySelectorAll("#visibleRange input"),

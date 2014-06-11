@@ -25,6 +25,18 @@ var match = function(maps, elm) {
        undefined);
   }, undefined);
 };
+var inRange = function(range, x) {
+  // JavaScript floats are too annoying, compare ints
+  return Math.floor(x) >= Math.floor(range[0])
+    && Math.floor(x) <= Math.floor(range[1]);
+};
+var segment = function(xs, size) {
+  if( xs.length <= size ) {
+    return [xs];
+  } else {
+    return [xs.slice(0,2)].concat(segment(xs.slice(2), size));
+  }
+};
 var Vector = function(x, y) {
   this.x = x;
   this.y = y;

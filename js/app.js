@@ -25,11 +25,14 @@ var renderObjects = function(objects) {
   var span = document.createElement("span");
   span.innerText = "Select an object";
   wrapper.appendChild(span);
-  objects.concat([{name:"*", type:""}]).map(function(o) {
+  objects.filter(function(o) {
+    return o.visible;
+  }).concat([{name:"*", type:""}]).map(function(o) {
     var li = document.createElement("li");
     var a = document.createElement("a");
     a.innerText = o.name + (o.type ? " ["+o.type+"]" : "");
     a.href = "#"+o.name;
+    a.className = o.active ? "active" : "";
     li.appendChild(a);
     return li;
   }).forEach(function(li) {
@@ -60,17 +63,24 @@ var mutators = (function() {
     objects.forEach(function(object) {
       var name = object.name;
       if( !withinBounds(object) ) {
+	object.visible = false;
+	object.active = false;
 	scene.getObjectByName(name).visible = false;
       } else if( name == focus || focus == "*" ) {
+	object.visible = true;
+	object.active = true;
 	scene.getObjectByName(name).visible = true;
 	scene.getObjectByName(name).material = new THREE.MeshNormalMaterial();
       } else {
+	object.visible = true;
+	object.active = false;
 	scene.getObjectByName(name).visible = true;
 	scene.getObjectByName(name).material = new THREE.MeshBasicMaterial({
 	  color: 0xc4c4c4, wireframe: true, wireframe_linewidth: 10
 	});
       }
     });
+    renderObjects(objects);
   };
   var renderSTL = function(triangles, name) {
     var geo = new THREE.Geometry();
@@ -131,13 +141,14 @@ var mutators = (function() {
       !isConstant(orthogonalCounts) ) {
       type = "Cy";
     } else if(isConstant(orthogonalCounts)) {
+      // NB. not sufficient to distinguish from an unknown shape
       type = "S";
     } else {
       type = "Unk";
     }
 
     // update and render object list
-    objects.push({ name: name, position: center, type: type });
+    objects.push({ name: name, position: center, type: type, active: focus == "*", visible: true });
     renderObjects(objects);
   };
   return { renderSTL: renderSTL,

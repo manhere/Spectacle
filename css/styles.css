@@ -38,7 +38,13 @@ body {
   #tools #objects ul {
     margin: 0;
     padding: 0;
-  }
+    }
+    #tools #objects ul a{
+      color: #aaa;
+    }
+    #tools #objects ul a.active {
+      color: #000;
+    }
 #map {
   width: 100px;
   height: 100px;

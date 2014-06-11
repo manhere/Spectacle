@@ -44,13 +44,12 @@ var renderObjects = function(objects) {
 var mutators = (function() {
   var objects = [];
   var focus = "*";
-  var xRange = [6000, -6000], yRange = [6000, -6000], zRange = [6000, -6000];
   var ranges = [[6000, -6000], [6000, -6000], [6000, -6000]];
   var withinBounds = function(object) {
     var inputs = [].map.call(
       document.querySelectorAll("#visibleRange input"),
       function(range, i) {
-	var maxmin = [xRange, xRange, yRange, yRange, zRange, zRange][i];
+	var maxmin = ranges[Math.floor(i/2)];
 	return range.value/100 * (maxmin[1] - maxmin[0]) + maxmin[0];
       });
     var p = object.position, x = p.x, y = p.y, z = p.z;
@@ -80,17 +79,16 @@ var mutators = (function() {
     }, new THREE.Vector3(0,0,0)).multiplyScalar(1/allVs.length);
 
     // update max and min
-    xRange[0] = xRange[0] < center.x ? xRange[0] : center.x;
-    xRange[1] = xRange[1] > center.x ? xRange[1] : center.x;
-    yRange[0] = yRange[0] < center.y ? yRange[0] : center.y;
-    yRange[1] = yRange[1] > center.y ? yRange[1] : center.y;
-    zRange[0] = zRange[0] < center.z ? zRange[0] : center.z;
-    zRange[1] = zRange[1] > center.z ? zRange[1] : center.z;
+    ranges = ranges.map(function(range, i) {
+      var p = [center.x, center.y, center.z][i];
+      return [Math.min(p, range[0]), Math.max(p, range[1])];
+    });
 
+    // update and render object list
     objects.push({ name: name, position: center });
     renderObjects(objects);
   };
-  var renderFocus = function(f) {
+  var renderFocusAndVisibilityOfObjects = function(f) {
     focus = typeof f == 'string' ? f : focus;
     objects.forEach(function(object) {
       var name = object.name;
@@ -109,7 +107,7 @@ var mutators = (function() {
   };
   return { renderSTL: renderSTL,
     withinBounds: withinBounds,
-    renderFocus: renderFocus };
+    renderFocus: renderFocusAndVisibilityOfObjects };
 }());
 var renderSTL = mutators.renderSTL,
     withinBounds = mutators.withinBounds,

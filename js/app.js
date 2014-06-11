@@ -14,7 +14,7 @@ var listenForObjectSelect = function(objects) {
     function(a) {
       a.addEventListener("click", function(evt) {
         evt.preventDefault();
-	renderFocus(a.innerText);
+	renderFocus(a.href.split('#')[1]);
       });
     });
 };
@@ -25,13 +25,11 @@ var renderObjects = function(objects) {
   var span = document.createElement("span");
   span.innerText = "Select an object";
   wrapper.appendChild(span);
-  objects.map(function(o) {
-    return o.name;
-  }).concat(["*"]).map(function(n) {
+  objects.concat([{name:"*", type:""}]).map(function(o) {
     var li = document.createElement("li");
     var a = document.createElement("a");
-    a.innerText = n;
-    a.href = "#";
+    a.innerText = o.name + (o.type ? " ["+o.type+"]" : "");
+    a.href = "#"+o.name;
     li.appendChild(a);
     return li;
   }).forEach(function(li) {
@@ -56,6 +54,23 @@ var mutators = (function() {
     return segment(inputs, 2).map(function(range, i) {
       return inRange(range, [x,y,z][i]);
     }).reduce(function(a, x) { return a && x; }, true);
+  };
+  var renderFocusAndVisibilityOfObjects = function(f) {
+    focus = typeof f == 'string' ? f : focus;
+    objects.forEach(function(object) {
+      var name = object.name;
+      if( !withinBounds(object) ) {
+	scene.getObjectByName(name).visible = false;
+      } else if( name == focus || focus == "*" ) {
+	scene.getObjectByName(name).visible = true;
+	scene.getObjectByName(name).material = new THREE.MeshNormalMaterial();
+      } else {
+	scene.getObjectByName(name).visible = true;
+	scene.getObjectByName(name).material = new THREE.MeshBasicMaterial({
+	  color: 0xc4c4c4, wireframe: true, wireframe_linewidth: 10
+	});
+      }
+    });
   };
   var renderSTL = function(triangles, name) {
     var geo = new THREE.Geometry();
@@ -84,26 +99,51 @@ var mutators = (function() {
       return [Math.min(p, range[0]), Math.max(p, range[1])];
     });
 
-    // update and render object list
-    objects.push({ name: name, position: center });
-    renderObjects(objects);
-  };
-  var renderFocusAndVisibilityOfObjects = function(f) {
-    focus = typeof f == 'string' ? f : focus;
-    objects.forEach(function(object) {
-      var name = object.name;
-      if( !withinBounds(object) ) {
-	scene.getObjectByName(name).visible = false;
-      } else if( name == focus || focus == "*" ) {
-	scene.getObjectByName(name).visible = true;
-	scene.getObjectByName(name).material = new THREE.MeshNormalMaterial();
-      } else {
-	scene.getObjectByName(name).visible = true;
-	scene.getObjectByName(name).material = new THREE.MeshBasicMaterial({
-	  color: 0xc4c4c4, wireframe: true, wireframe_linewidth: 10
-	});
+    // Find the unique directions in which facets point.
+    var uniqueNormals = [], Epsilon = 0.01;
+    triangles.forEach(function(t) {
+      var n = vectorFromVertex(t.normal);
+      for( var k in uniqueNormals ) {
+        var normal = uniqueNormals[k];
+	if( normal.clone().add(n.clone().multiplyScalar(-1)).length() <= Epsilon ) return;
       }
+      uniqueNormals.push(n);
     });
+
+    // Calculate the structure of these directions in relation to one another.
+    var orthogonalCounts = uniqueNormals.map(function(n1) {
+      return uniqueNormals.filter(function(n2) {
+        return n1.clone().dot(n2.clone()) == 0;
+      }).length;
+    }).sort(function(a,b) { return b-a; });
+    var isConstant = function(xs) {
+      return xs.filter(function(x) { return Math.abs(x - xs[0]) > 1; }).length == 0;
+    };
+    var roundedAverage = function(xs) {
+      return Math.round(xs.reduce(function(a,b){return a+b;}) / xs.length);
+    };
+
+    // Conclude the type of primitive
+    var type;
+    if(
+      isConstant(orthogonalCounts) &&
+      roundedAverage(orthogonalCounts) != 0 ) {
+      console.log("Cube");
+      type = "Cu";
+    } else if(
+      isConstant(orthogonalCounts.slice(0,2)) &&
+      isConstant(orthogonalCounts.slice(2)) &&
+      roundedAverage(orthogonalCounts) != 0 ) {
+      console.log("Cylinder"); 
+      type = "Cy";
+    } else {
+      console.log("Sphere");
+      type = "S";
+    }
+
+    // update and render object list
+    objects.push({ name: name, position: center, type: type });
+    renderObjects(objects);
   };
   return { renderSTL: renderSTL,
     withinBounds: withinBounds,

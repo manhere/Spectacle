@@ -30,7 +30,7 @@ var renderObjects = function(objects) {
   }).concat([{name:"*", type:""}]).map(function(o) {
     var li = document.createElement("li");
     var a = document.createElement("a");
-    a.innerText = o.name + (o.type ? " ["+o.type+"]" : "");
+    a.innerHTML = o.name + "<span class=\"details\">" + (o.type ? " ["+o.type+"]" : "") + "</span>";
     a.href = "#"+o.name;
     a.className = o.active ? "active" : "";
     li.appendChild(a);
@@ -112,7 +112,7 @@ var mutators = (function() {
     // update and render object list
     objects.push({ name: name,
       position: center,
-      type: recognizePrimitiveShape(triangles),
+      type: recognizePrimitiveShape(triangles, center),
       active: focus == "*",
       visible: true });
     renderObjects(objects);

@@ -170,9 +170,12 @@ var surfaceBasisTransformer = function(basis) {
     };
   };
 };
-var recognizePrimitiveShape = function(triangles) {
+var recognizePrimitiveShape = function(triangles, center) {
   // Find the unique directions in which facets point.
   var uniqueNormals = [], Epsilon = 0.01;
+  var nearEqual = function(a, b) {
+    return Math.abs((a-b)/a) <= 0.05;
+  };
   triangles.forEach(function(t) {
     var n = vectorFromVertex(t.normal);
     for( var k in uniqueNormals ) {
@@ -193,18 +196,49 @@ var recognizePrimitiveShape = function(triangles) {
     return xs.filter(function(x) { return Math.abs(x - base) > 1; }).length == 0;
   };
 
+  var ps = triangles.map(function(t) {
+    return vectorsFromVertices(t.vertices);
+  }).reduce(function(a, b) {
+    return a.concat(b);
+  });
+  var deviations = ps.map(function(p) {
+    return p.clone().add(center.clone().multiplyScalar(-1));
+  });
+  var spliceVectors = function(vs) {
+    return [
+      vs.map(function(v) { return v.x; }),
+      vs.map(function(v) { return v.y; }),
+      vs.map(function(v) { return v.z; })];
+  };
+  var vectorMax = function(vs) {
+    return vectorFromVertex(spliceVectors(vs).map(function(xs) {
+      return Math.max.apply(Math, xs);
+    }));
+  };
+  var vectorMin = function(vs) {
+    return vectorFromVertex(spliceVectors(vs).map(function(xs) {
+      return Math.min.apply(Math, xs);
+    }));
+  };
+
   // Conclude the type of primitive
   var type;
+  var d = vectorMax(deviations).add(vectorMin(deviations).multiplyScalar(-1));
   if(isConstant(orthogonalCounts, 4)) {
-    return "Cu";
+    return "Cu " + [d.x, d.y, d.z].join("x");
   } else if(
     isConstant(orthogonalCounts.slice(0,2)) &&
     isConstant(orthogonalCounts.slice(2)) &&
     !isConstant(orthogonalCounts) ) {
-    return "Cy";
+    var measures = nearEqual(d.x, d.y) ?
+      [d.z, Math.round((d.x+d.y)/4)] :
+      (nearEqual(d.x, d.z) ?
+        [d.y, Math.round((d.x+d.z)/4)] :
+	[d.x, Math.round((d.z+d.y)/4)]);
+    return "Cy " + measures.join("@");
   } else if(isConstant(orthogonalCounts)) {
     // NB. not sufficient to distinguish from an unknown shape
-    return "S";
+    return "S @" + Math.round((d.x+d.y+d.z)/6);
   } else {
     return "Unk";
   }

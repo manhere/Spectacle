@@ -25,7 +25,7 @@ body {
   padding: 20px;
   box-sizing: border-box;
   margin: 0;
-  width: 250px;
+  width: 350px;
   border-right: 1px solid #333;
   height: 100%;
   overflow: scroll;
@@ -39,8 +39,14 @@ body {
     margin: 0;
     padding: 0;
     }
-    #tools #objects ul a{
+    #tools #objects ul a {
       color: #aaa;
+    }
+    #tools #objects ul a .details {
+      color: #aaa;
+      font-weight: normal;
+      font-style: italic;
+      margin-left: 10px;
     }
     #tools #objects ul a.active {
       color: #000;

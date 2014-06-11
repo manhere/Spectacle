@@ -116,29 +116,24 @@ var mutators = (function() {
         return n1.clone().dot(n2.clone()) == 0;
       }).length;
     }).sort(function(a,b) { return b-a; });
-    var isConstant = function(xs) {
-      return xs.filter(function(x) { return Math.abs(x - xs[0]) > 1; }).length == 0;
-    };
-    var roundedAverage = function(xs) {
-      return Math.round(xs.reduce(function(a,b){return a+b;}) / xs.length);
+    var isConstant = function(xs, base) {
+      base = typeof base == 'undefined' ? xs[0] : base;
+      return xs.filter(function(x) { return Math.abs(x - base) > 1; }).length == 0;
     };
 
     // Conclude the type of primitive
     var type;
-    if(
-      isConstant(orthogonalCounts) &&
-      roundedAverage(orthogonalCounts) != 0 ) {
-      console.log("Cube");
+    if(isConstant(orthogonalCounts, 4)) {
       type = "Cu";
     } else if(
       isConstant(orthogonalCounts.slice(0,2)) &&
       isConstant(orthogonalCounts.slice(2)) &&
-      roundedAverage(orthogonalCounts) != 0 ) {
-      console.log("Cylinder"); 
+      !isConstant(orthogonalCounts) ) {
       type = "Cy";
-    } else {
-      console.log("Sphere");
+    } else if(isConstant(orthogonalCounts)) {
       type = "S";
+    } else {
+      type = "Unk";
     }
 
     // update and render object list

@@ -109,46 +109,12 @@ var mutators = (function() {
       return [Math.min(p, range[0]), Math.max(p, range[1])];
     });
 
-    // Find the unique directions in which facets point.
-    var uniqueNormals = [], Epsilon = 0.01;
-    triangles.forEach(function(t) {
-      var n = vectorFromVertex(t.normal);
-      for( var k in uniqueNormals ) {
-        var normal = uniqueNormals[k];
-	if( normal.clone().add(n.clone().multiplyScalar(-1)).length() <= Epsilon ) return;
-      }
-      uniqueNormals.push(n);
-    });
-
-    // Calculate the structure of these directions in relation to one another.
-    var orthogonalCounts = uniqueNormals.map(function(n1) {
-      return uniqueNormals.filter(function(n2) {
-        return n1.clone().dot(n2.clone()) == 0;
-      }).length;
-    }).sort(function(a,b) { return b-a; });
-    var isConstant = function(xs, base) {
-      base = typeof base == 'undefined' ? xs[0] : base;
-      return xs.filter(function(x) { return Math.abs(x - base) > 1; }).length == 0;
-    };
-
-    // Conclude the type of primitive
-    var type;
-    if(isConstant(orthogonalCounts, 4)) {
-      type = "Cu";
-    } else if(
-      isConstant(orthogonalCounts.slice(0,2)) &&
-      isConstant(orthogonalCounts.slice(2)) &&
-      !isConstant(orthogonalCounts) ) {
-      type = "Cy";
-    } else if(isConstant(orthogonalCounts)) {
-      // NB. not sufficient to distinguish from an unknown shape
-      type = "S";
-    } else {
-      type = "Unk";
-    }
-
     // update and render object list
-    objects.push({ name: name, position: center, type: type, active: focus == "*", visible: true });
+    objects.push({ name: name,
+      position: center,
+      type: recognizePrimitiveShape(triangles),
+      active: focus == "*",
+      visible: true });
     renderObjects(objects);
   };
   return { renderSTL: renderSTL,

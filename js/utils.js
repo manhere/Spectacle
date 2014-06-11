@@ -243,4 +243,50 @@ var recognizePrimitiveShape = function(triangles, center) {
     return "Unk";
   }
 };
+var findCompositeFacets = function(triangles) {
+  var Epsilon = 0.1;
+  var vectorEqual = function(x, y) {
+    return Math.abs(x[0]-y[0]) <= Epsilon &&
+           Math.abs(x[1]-y[1]) <= Epsilon &&
+           Math.abs(x[2]-y[2]) <= Epsilon;
+  };
+  var facetsOverlap = function(xs, ys) {
+    for( var y in ys ) {
+      for( var x in xs ) {
+        if( vectorEqual(xs[x], ys[y]) ) {
+	  return true;
+	}
+      }
+    }
+    return false;
+  };
+  
+  var expandComposite = function(points, composite, other) {
+    var added = false,
+        newComposite = composite.map(function(x){return x}),
+        newPoints = points.map(function(x){return x}),
+	newOther = [];
+    for(var i in other) {
+      var vs = other[i].vertices;
+      if( facetsOverlap(points, vs) ) {
+        newComposite.push(other[i]);
+	[].push.apply(newPoints, vs);
+	added = true;
+      } else {
+        newOther.push(other[i]);
+      }
+    }
+    if( !added && other.length ) {
+      return [composite].concat(expandComposite(other[0].vertices, [other[0]], other.slice(1)));
+    }
+    if( !added ) {
+      return [composite];
+    }
+    return expandComposite(newPoints, newComposite, newOther);
+  };
+  var findComposites = function(xs) {
+    return expandComposite(xs[0].vertices, [xs[0]], xs.slice(1));
+  };
+  return findComposites(triangles);
+};
 

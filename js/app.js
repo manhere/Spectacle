@@ -109,6 +109,8 @@ var mutators = (function() {
       return [Math.min(p, range[0]), Math.max(p, range[1])];
     });
 
+    findCompositeFacets(triangles);
+
     // update and render object list
     objects.push({ name: name,
       position: center,

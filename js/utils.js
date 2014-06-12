@@ -530,7 +530,7 @@ var splitComposite = function(c) {
       }).map(renderMatrix).join("\n\n"));
     });
 
-    // TODO: take this shape's 8 vertices, and 
+    // TODO: take these shapes' share of triangles, and 
     // recurse to find more composites.
 
     return [c];

@@ -397,9 +397,8 @@ var renderMatrix = function(grid) {
   }).join("\n");
 };
 var findReverse = function(xs, y) {
-  var yp = y.reverse();
   var matches = xs.filter(function(l) {
-    return l.filter(function(s, i) { return !vEqual(yp[y], s) }).length == 0;
+    return !vEqual(l[1], y[1]) && vEqual(l[2], y[2]);
   });
   return matches[0];
 };
@@ -430,7 +429,7 @@ var splitComposite = function(c) {
     };
 
     arrows = getArrows(addArrows({}, arrows)).map(vectorsFromVertices);
-    var seed = arrows[1][0];
+    var seed = arrows[2][0];
     var loops = findLoops(arrows, [seed]);
     var revs = [], pairs = [];
     for( var k in loops ) {
@@ -444,12 +443,23 @@ var splitComposite = function(c) {
       }
     }
 
-    var offshoots = pairs.map(function(p) { return p[0].slice(0,2); });
+    var perimeter = function(vs) {
+      var seed = vs[0], p = 0;
+      vs.slice(1).forEach(function(v) {
+        p += v.clone().add(seed.clone().multiplyScalar(-1)).length();
+      });
+      return p;
+    };
+
+    var offshoots = loops.map(function(p) { return p.slice(0,2); });
     var offshotDirections = offshoots.map(function(vs) {
       return vs[1].clone().add(vs[0].clone().multiplyScalar(-1)).normalize();
     });
     var uniqueOffshoots = vectorsFromVertices(
       getPoints(addPoints({}, offshotDirections.map(function(v){return [v.x, v.y, v.z]}))));
+
+    // the basis will have four, for example, when a point
+    // sits as part of two cubes
     var shapeBasis = uniqueOffshoots.map(function(x, j) {
       return uniqueOffshoots.map(function(y, i) {
 	if( i == j ) return [i];
@@ -462,18 +472,43 @@ var splitComposite = function(c) {
 	  function(x) {
 	    return x[0] >= 3;
 	  }).map(function(x) { return uniqueOffshoots[x[1]]; });
-    var faces = shapeBasis.map(function(d) {
-      // TODO: the loops being selecting here are sometimes those
-      // that cut through a face rather than tracing it.
-      var loop = loops.filter(function(l) {
+    var primeLoops = pairs.map(function(x) { return x[0]; });
+    var secondLoops = pairs.map(function(x) { return x[1]; });
+    var selectedLoops = [[], []];
+    shapeBasis.forEach(function(d) {
+      var prospects = primeLoops.filter(function(l) {
 	var seed = l[0].clone().multiplyScalar(-1);
         return l[1].clone().add(seed).normalize().dot(d.clone()) == 1;
-      })[0];
-      return [loop[0], loop[2]];
+      });
+      // the prospects from the counter-clockwise loops
+      var prospects2 = secondLoops.filter(function(l) {
+	var seed = l[0].clone().multiplyScalar(-1);
+        return l[1].clone().add(seed).normalize().dot(d.clone()) == 1;
+      });
+      // select the shorter path to account for shapes
+      // resting on larger ones
+      selectedLoops = prospects.sort(function(a,b) {
+        return perimeter(a) - perimeter(b);
+      }).map(function(p) {
+        return [primeLoops.indexOf(p), secondLoops.indexOf(p)];
+      }).slice(0,1).reduce(function(a, indices) {
+	var i = indices[0], j = indices[1];
+        return [a[0].concat(i == -1 ? [] : [i]), a[1].concat(j == -1 ? [] : [j])];
+      }, selectedLoops);
     });
-    console.log(faces.map(function(m) {return renderMatrix(m)}).join("\n\n"));
+    var faces = selectedLoops[0].map(function(i) {
+      return primeLoops[i];
+    });
 
-    loops.forEach(function(l) {
+    console.log(faces.map(function(f) {
+      return [f[0], f[2]];
+    }).map(renderMatrix).join("\n\n"));
+
+    // TODO: determine which faces belong together, take
+    // this shape's 8 vertices, and recurse to find more
+    // composites.
+
+    primeLoops.forEach(function(l) {
       var prev = seed;
       l.slice(1).forEach(function(x) {
         scene.add(drawVectorLine(prev, x));

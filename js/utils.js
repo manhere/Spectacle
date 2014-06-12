@@ -106,6 +106,13 @@ var drawVector = function(pos, v) {
   var material = new THREE.LineBasicMaterial({ color: 0xff0000 });
   return new THREE.Line(geometry, material);
 };
+var drawVectorLine = function(pos, to) {
+  var geometry = new THREE.Geometry();
+  geometry.vertices.push(pos);
+  geometry.vertices.push(to);
+  var material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+  return new THREE.Line(geometry, material);
+};
 var formZeroBasis = function(x, y, z) {
   if( x && y && z ) {
     throw new Error("Cannot form basis around null.");
@@ -244,37 +251,73 @@ var recognizePrimitiveShape = function(triangles, center) {
     return "Unk";
   }
 };
+var hashVector = function(x, y, z) {
+  var xp = x*100 | 0,
+      yp = y*100 | 0,
+      zp = z*100 | 0;
+  return [xp, yp, zp].join(",");
+};
+var hashArrow = function(a, b) {
+  var ha = hashVector.apply([], a),
+      hb = hashVector.apply([], b);
+  return ha > hb ? ha + "->" + hb : hb + "->" + ha;
+};
+var addPoint = function(points, x) {
+  var k = hashVector.apply({}, x);
+  points[k] = true;
+  return points;
+};
+var addPoints = function(points, xs) {
+  for(var i in xs) {
+    var x = xs[i];
+    points = addPoint(points, x);
+  }
+  return points;
+};
+var addArrow = function(points, x) {
+  var k = hashArrow.apply({}, x);
+  points[k] = true;
+  return points;
+};
+var addArrows = function(points, xs) {
+  for(var i in xs) {
+    var x = xs[i];
+    points = addArrow(points, x);
+  }
+  return points;
+};
+var hasPoint = function(points, x) {
+  var k = hashVector.apply({}, x);
+  return points[k];
+};
+var hasAnyPoint = function(points, xs) {
+  return xs.map(
+    hasPoint.bind({}, points)).reduce(
+      function(a,b){
+	return a||b
+      });
+};
+var getPoints = function(points) {
+  var xs = [];
+  for( var p in points ) {
+    xs.push(p.split(",").map(function(x) {
+      return parseFloat(x, 10)/100;
+    }));
+  }
+  return xs;
+};
+var getArrows = function(points) {
+  var xs = [];
+  for( var p in points ) {
+    xs.push(p.split("->").map(function(x) {
+      var ps = {};
+      ps[x] = true;
+      return getPoints(ps)[0];
+    }));
+  }
+  return xs;
+};
 var findCompositeFacets = function(triangles) {
-  var hash = function(x, y, z) {
-    var xp = x*100 | 0,
-        yp = y*100 | 0,
-	zp = z*100 | 0;
-    return [xp, yp, zp].join(",");
-  };
-  var addPoint = function(points, x) {
-    var k = hash.apply({}, x);
-    points[k] = true;
-    return points;
-  };
-  var addPoints = function(points, xs) {
-    for(var i in xs) {
-      var x = xs[i];
-      points = addPoint(points, x);
-    }
-    return points;
-  };
-  var hasPoint = function(points, x) {
-    var k = hash.apply({}, x);
-    return points[k];
-  };
-  var hasAnyPoint = function(points, xs) {
-    return xs.map(
-      hasPoint.bind({}, points)).reduce(
-        function(a,b){
-	  return a||b
-	});
-  };
-  
   var expandComposite = function(points, composite, other) {
     var added = false,
         newComposite = composite.map(function(x){return x}),
@@ -303,5 +346,144 @@ var findCompositeFacets = function(triangles) {
     return expandComposite(ps, [xs[0]], xs.slice(1));
   };
   return findComposites(triangles);
+};
+var vEqual = function(a, b) {
+  for( var k in a ) {
+    if( a[k] != b[k] ) return false;
+  }
+  return true;
+};
+var vContains = function(xs, y) {
+  for( var k in xs ) {
+    if( vEqual(xs[k], y) ) return true;
+  }
+  return false;
+};
+var findLoops = function(arrows, loop) {
+  if( loop.length > 4 ) return [];
+
+  var end = loop[loop.length - 1];
+  var steps = arrows.filter(function(a) {
+    return vEqual(a[0], end) || vEqual(a[1], end);
+  }).map(function(a) {
+    return vEqual(a[0], end) ? a[1] : a[0];
+  });
+  var closedLoops = loop.length == 4 ? steps.filter(function(s) { return vEqual(loop[0], s) }) : [];
+  var runningLoops = steps.filter(function(s) { return !vContains(loop, s); });
+  return closedLoops.map(
+    function(s) {
+      return loop.concat([s]);
+    }).concat(
+    runningLoops.map(
+      function(s) {
+        return findLoops(arrows, loop.concat([s]));
+      }).reduce(
+	function(a,b) {
+	  return a.concat(b)
+	}, []));
+};
+var renderGrid = function(grid) {
+  return grid.map(function(xs) {
+    return xs.map(function(x) {
+      return (x*100 | 0)/100;
+    }).join("\t");
+  }).join("\n");
+};
+var renderMatrix = function(grid) {
+  return grid.map(function(xs) {
+    return [xs.x, xs.y, xs.z].map(function(x) {
+      return (x*100 | 0)/100;
+    }).join("\t");
+  }).join("\n");
+};
+var findReverse = function(xs, y) {
+  var yp = y.reverse();
+  var matches = xs.filter(function(l) {
+    return l.filter(function(s, i) { return !vEqual(yp[y], s) }).length == 0;
+  });
+  return matches[0];
+};
+var splitComposite = function(c) {
+  var vs = c.map(function(x) {
+    return x.vertices;
+  }).reduce(function(a,x) {
+    return a.concat(x);
+  });
+  var center = vectorsFromVertices(vs).reduce(function(a,x) {
+    return a.add(x);
+  }).multiplyScalar(1/vs.length);
+
+  if( recognizePrimitiveShape(c, center).match(/^Cu/) ) {
+    var arrows = c.map(function(x) {
+      var vs = x.vertices;
+      return [vs.slice(0,2), vs.slice(1)];
+    }).reduce(function(a,x) {
+      return a.concat(x);
+    });
+
+    var loopEqual = function(a, b) {
+      for( var k in a ) {
+        var x = a[k], y = b[k];
+        if( !(x.x == y.x && x.y == y.y && x.z == y.z) ) return false;
+      }
+      return true;
+    };
+
+    arrows = getArrows(addArrows({}, arrows)).map(vectorsFromVertices);
+    var seed = arrows[1][0];
+    var loops = findLoops(arrows, [seed]);
+    var revs = [], pairs = [];
+    for( var k in loops ) {
+      var l = loops[k];
+      if( revs.filter(function(rev) { return loopEqual(rev, l) }).length == 0 ) {
+	var rev = findReverse(loops, l);
+	if( rev ) {
+	  revs.push(rev);
+	  pairs.push([l, rev]);
+	}
+      }
+    }
+
+    var offshoots = pairs.map(function(p) { return p[0].slice(0,2); });
+    var offshotDirections = offshoots.map(function(vs) {
+      return vs[1].clone().add(vs[0].clone().multiplyScalar(-1)).normalize();
+    });
+    var uniqueOffshoots = vectorsFromVertices(
+      getPoints(addPoints({}, offshotDirections.map(function(v){return [v.x, v.y, v.z]}))));
+    var shapeBasis = uniqueOffshoots.map(function(x, j) {
+      return uniqueOffshoots.map(function(y, i) {
+	if( i == j ) return [i];
+        return x.clone().normalize().dot(y.clone().normalize()) == 0 ? [i] : null;
+      }).filter(function(x) { return x; }).map(function(x) { return x[0]; });
+    }).map(
+      function(orthos, i) {
+        return [orthos.length, i]
+        }).filter(
+	  function(x) {
+	    return x[0] >= 3;
+	  }).map(function(x) { return uniqueOffshoots[x[1]]; });
+    var faces = shapeBasis.map(function(d) {
+      // TODO: the loops being selecting here are sometimes those
+      // that cut through a face rather than tracing it.
+      var loop = loops.filter(function(l) {
+	var seed = l[0].clone().multiplyScalar(-1);
+        return l[1].clone().add(seed).normalize().dot(d.clone()) == 1;
+      })[0];
+      return [loop[0], loop[2]];
+    });
+    console.log(faces.map(function(m) {return renderMatrix(m)}).join("\n\n"));
+
+    loops.forEach(function(l) {
+      var prev = seed;
+      l.slice(1).forEach(function(x) {
+        scene.add(drawVectorLine(prev, x));
+	prev = x;
+      });
+    });
+
+    return [c];
+  } else {
+    return [c];
+  }
 };
 

@@ -131,7 +131,12 @@ var handleSTL = function(evt) {
     reader.onload = function(e) {
       var bytes = new Uint8Array(e.target.result);
       var triangles = parse(bytes).data;
-      var composites = findCompositeFacets(triangles);
+      var composites = findCompositeFacets(
+        triangles).map(
+	  splitComposite).reduce(
+	    function(a,b) {
+	      return a.concat(b);
+	    }, []);
       composites.forEach(function(c, i) {
 	renderSTL(c, file.name + " c"+i);
       });

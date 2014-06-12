@@ -170,6 +170,22 @@ var surfaceBasisTransformer = function(basis) {
     };
   };
 };
+var spliceVectors = function(vs) {
+  return [
+    vs.map(function(v) { return v.x; }),
+    vs.map(function(v) { return v.y; }),
+    vs.map(function(v) { return v.z; })];
+};
+var vectorMax = function(vs) {
+  return vectorFromVertex(spliceVectors(vs).map(function(xs) {
+    return Math.max.apply(Math, xs);
+  }));
+};
+var vectorMin = function(vs) {
+  return vectorFromVertex(spliceVectors(vs).map(function(xs) {
+    return Math.min.apply(Math, xs);
+  }));
+};
 var recognizePrimitiveShape = function(triangles, center) {
   // Find the unique directions in which facets point.
   var uniqueNormals = [], Epsilon = 0.01;
@@ -204,27 +220,12 @@ var recognizePrimitiveShape = function(triangles, center) {
   var deviations = ps.map(function(p) {
     return p.clone().add(center.clone().multiplyScalar(-1));
   });
-  var spliceVectors = function(vs) {
-    return [
-      vs.map(function(v) { return v.x; }),
-      vs.map(function(v) { return v.y; }),
-      vs.map(function(v) { return v.z; })];
-  };
-  var vectorMax = function(vs) {
-    return vectorFromVertex(spliceVectors(vs).map(function(xs) {
-      return Math.max.apply(Math, xs);
-    }));
-  };
-  var vectorMin = function(vs) {
-    return vectorFromVertex(spliceVectors(vs).map(function(xs) {
-      return Math.min.apply(Math, xs);
-    }));
-  };
 
   // Conclude the type of primitive
   var type;
   var d = vectorMax(deviations).add(vectorMin(deviations).multiplyScalar(-1));
-  if(isConstant(orthogonalCounts, 4)) {
+  if(isConstant(orthogonalCounts, 4) &&
+     uniqueNormals.length == 6) {
     return "Cu " + [d.x, d.y, d.z].join("x");
   } else if(
     isConstant(orthogonalCounts.slice(0,2)) &&
@@ -244,48 +245,62 @@ var recognizePrimitiveShape = function(triangles, center) {
   }
 };
 var findCompositeFacets = function(triangles) {
-  var Epsilon = 0.1;
-  var vectorEqual = function(x, y) {
-    return Math.abs(x[0]-y[0]) <= Epsilon &&
-           Math.abs(x[1]-y[1]) <= Epsilon &&
-           Math.abs(x[2]-y[2]) <= Epsilon;
+  var hash = function(x, y, z) {
+    var xp = x*100 | 0,
+        yp = y*100 | 0,
+	zp = z*100 | 0;
+    return [xp, yp, zp].join(",");
   };
-  var facetsOverlap = function(xs, ys) {
-    for( var y in ys ) {
-      for( var x in xs ) {
-        if( vectorEqual(xs[x], ys[y]) ) {
-	  return true;
-	}
-      }
+  var addPoint = function(points, x) {
+    var k = hash.apply({}, x);
+    points[k] = true;
+    return points;
+  };
+  var addPoints = function(points, xs) {
+    for(var i in xs) {
+      var x = xs[i];
+      points = addPoint(points, x);
     }
-    return false;
+    return points;
+  };
+  var hasPoint = function(points, x) {
+    var k = hash.apply({}, x);
+    return points[k];
+  };
+  var hasAnyPoint = function(points, xs) {
+    return xs.map(
+      hasPoint.bind({}, points)).reduce(
+        function(a,b){
+	  return a||b
+	});
   };
   
   var expandComposite = function(points, composite, other) {
     var added = false,
         newComposite = composite.map(function(x){return x}),
-        newPoints = points.map(function(x){return x}),
 	newOther = [];
     for(var i in other) {
       var vs = other[i].vertices;
-      if( facetsOverlap(points, vs) ) {
+      if( hasAnyPoint(points, vs) ) {
         newComposite.push(other[i]);
-	[].push.apply(newPoints, vs);
+	points = addPoints(points, vs);
 	added = true;
       } else {
         newOther.push(other[i]);
       }
     }
     if( !added && other.length ) {
-      return [composite].concat(expandComposite(other[0].vertices, [other[0]], other.slice(1)));
+      var ps = addPoints({}, other[0].vertices);
+      return [composite].concat(expandComposite(ps, [other[0]], other.slice(1)));
     }
     if( !added ) {
       return [composite];
     }
-    return expandComposite(newPoints, newComposite, newOther);
+    return expandComposite(points, newComposite, newOther);
   };
   var findComposites = function(xs) {
-    return expandComposite(xs[0].vertices, [xs[0]], xs.slice(1));
+    var ps = addPoints({}, xs[0].vertices);
+    return expandComposite(ps, [xs[0]], xs.slice(1));
   };
   return findComposites(triangles);
 };

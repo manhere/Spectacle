@@ -472,8 +472,11 @@ var splitComposite = function(c) {
 	  function(x) {
 	    return x[0] >= 3;
 	  }).map(function(x) { return uniqueOffshoots[x[1]]; });
+
+    // TODO: disallow diagonals in loops somehow
     var primeLoops = pairs.map(function(x) { return x[0]; });
     var secondLoops = pairs.map(function(x) { return x[1]; });
+
     var selectedLoops = [[], []];
     shapeBasis.forEach(function(d) {
       var prospects = primeLoops.filter(function(l) {
@@ -485,13 +488,10 @@ var splitComposite = function(c) {
 	var seed = l[0].clone().multiplyScalar(-1);
         return l[1].clone().add(seed).normalize().dot(d.clone()) == 1;
       });
-      // select the shorter path to account for shapes
-      // resting on larger ones
-      selectedLoops = prospects.sort(function(a,b) {
-        return perimeter(a) - perimeter(b);
-      }).map(function(p) {
+
+      selectedLoops = prospects.map(function(p) {
         return [primeLoops.indexOf(p), secondLoops.indexOf(p)];
-      }).slice(0,1).reduce(function(a, indices) {
+      }).reduce(function(a, indices) {
 	var i = indices[0], j = indices[1];
         return [a[0].concat(i == -1 ? [] : [i]), a[1].concat(j == -1 ? [] : [j])];
       }, selectedLoops);
@@ -500,21 +500,38 @@ var splitComposite = function(c) {
       return primeLoops[i];
     });
 
-    console.log(faces.map(function(f) {
-      return [f[0], f[2]];
-    }).map(renderMatrix).join("\n\n"));
+    var facetsOverlap = function(a, b) {
+      var count = 0;
+      for( var k in a ) {
+	var x = a[k], y = b[k];
+	if( x.x == y.x && x.y == y.y && x.z == y.z ) count += 1;
+      }
+      return count > 2;
+    };
 
-    // TODO: determine which faces belong together, take
-    // this shape's 8 vertices, and recurse to find more
-    // composites.
-
-    primeLoops.forEach(function(l) {
-      var prev = seed;
-      l.slice(1).forEach(function(x) {
-        scene.add(drawVectorLine(prev, x));
-	prev = x;
+    var shapes = [];
+    faces.forEach(function(face) {
+      var added = false;
+      shapes.forEach(function(shape) {
+        if( added ) return;
+        var fits = shape.filter(
+	  facetsOverlap.bind({}, face)).length == shape.length;
+	if( fits ) {
+	  shape.push(face);
+	  added = true;
+	}
       });
+      if( !added ) shapes.push([face]);
     });
+
+    shapes.forEach(function(shape) {
+      console.log(shape.map(function(f) {
+	return [f[0], f[2]];
+      }).map(renderMatrix).join("\n\n"));
+    });
+
+    // TODO: take this shape's 8 vertices, and 
+    // recurse to find more composites.
 
     return [c];
   } else {

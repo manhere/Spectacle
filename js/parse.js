@@ -114,7 +114,7 @@ var parse = function(bytes) {
     meta, bytes, 0,
     function(meta, offset) {
       var readTriangles = readArray(
-	meta.count,
+	Math.min(meta.count, 6000),
 	readTriangle);
       return new STLContent(meta, readTriangles(bytes, offset).read);
     });

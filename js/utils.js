@@ -36,6 +36,12 @@ var vectorFromVertex = function(v) {
 var vectorsFromVertices = function(vs) {
   return vs.map(vectorFromVertex);
 };
+var vertexFromVector = function(v) {
+  return [v.x, v.y, v.z];
+};
+var verticesFromVectors = function(vs) {
+  return vs.map(vertexFromVector);
+};
 var segment = function(xs, size) {
   if( xs.length <= size ) {
     return [xs];
@@ -423,14 +429,26 @@ var splitComposite = function(c) {
     var loopEqual = function(a, b) {
       for( var k in a ) {
         var x = a[k], y = b[k];
-        if( !(x.x == y.x && x.y == y.y && x.z == y.z) ) return false;
+        if( !(Math.abs(x.x - y.x) <= 0.01 &&
+	      Math.abs(x.y - y.y) <= 0.01 &&
+	      Math.abs(x.z - y.z) <= 0.01 ) ) return false;
       }
       return true;
     };
 
+    var rightAngle = function(x, y, z) {
+      var a = x.clone().add(y.clone().multiplyScalar(-1)),
+          b = y.clone().add(z.clone().multiplyScalar(-1));
+      return a.clone().dot(b.clone()) == 0;
+    };
+
     arrows = getArrows(addArrows({}, arrows)).map(vectorsFromVertices);
     var seed = arrows[2][0];
-    var loops = findLoops(arrows, [seed]);
+    var loops = findLoops(arrows, [seed]).filter(function(l) {
+      for( var i = 1; i < 4; i++ )
+        if( !rightAngle(l[i-1], l[i], l[i+1]) ) return false;
+      return true;
+    });
     var revs = [], pairs = [];
     for( var k in loops ) {
       var l = loops[k];
@@ -473,7 +491,6 @@ var splitComposite = function(c) {
 	    return x[0] >= 3;
 	  }).map(function(x) { return uniqueOffshoots[x[1]]; });
 
-    // TODO: disallow diagonals in loops somehow
     var primeLoops = pairs.map(function(x) { return x[0]; });
     var secondLoops = pairs.map(function(x) { return x[1]; });
 
@@ -506,7 +523,7 @@ var splitComposite = function(c) {
 	var x = a[k], y = b[k];
 	if( x.x == y.x && x.y == y.y && x.z == y.z ) count += 1;
       }
-      return count > 2;
+      return count == 3;
     };
 
     var shapes = [];
@@ -524,16 +541,88 @@ var splitComposite = function(c) {
       if( !added ) shapes.push([face]);
     });
 
-    shapes.forEach(function(shape) {
-      console.log(shape.map(function(f) {
-	return [f[0], f[2]];
-      }).map(renderMatrix).join("\n\n"));
+    shapes = shapes.sort(function(a,b) { return b.length - a.length });
+
+    var origin = shapes[0][0][0];
+    var shapeBasis = shapes[0].slice(0,2).map(function(f) {
+      return f.map(function(p) {
+        return p.clone().add(origin.clone().multiplyScalar(-1));
+      });
     });
+    console.log(shapeBasis.map(function(f) {
+      return f;
+    }).map(renderMatrix).join("\n\n"));
+    var extensionFromOrigin = function(x) {
+      var resp = verticesFromVectors(x.map(function(v) {
+        return v.clone().add(origin);
+      }));
+      return resp;
+    };
+    var triangles = [];
+    var addTriangle = function(ps) {
+      c = c.filter(function(t) {
+        return !loopEqual(
+	  vectorsFromVertices(t.vertices),
+	  vectorsFromVertices(extensionFromOrigin(ps)));
+      });
+      console.log(c.length);
+      triangles.push(new Triangle(
+	[0,0,0], 
+	extensionFromOrigin(ps),
+	null));
+    };
+    var addCube = function(vs) {
+      addTriangle([vs[1], vs[2], vs[0]]);
+      addTriangle([vs[3], vs[0], vs[2]]);
+      addTriangle([
+	vs[0].clone().add(vs[5+3]),
+	vs[2].clone().add(vs[5+3]),
+	vs[1].clone().add(vs[5+3])
+      ]);
+      addTriangle([
+	vs[2].clone().add(vs[5+3]),
+	vs[0].clone().add(vs[5+3]),
+	vs[3].clone().add(vs[5+3])
+      ]);
+      addTriangle([vs[5+0], vs[5+2], vs[5+1]]);
+      addTriangle([vs[5+2], vs[5+0], vs[5+3]]);
+      addTriangle([
+	vs[5+1].clone().add(vs[3]),
+	vs[5+2].clone().add(vs[3]),
+	vs[5+0].clone().add(vs[3])
+      ]);
+      addTriangle([
+	vs[5+3].clone().add(vs[3]),
+	vs[5+0].clone().add(vs[3]),
+	vs[5+2].clone().add(vs[3])
+      ]);
+      addTriangle([
+	vs[3],
+	vs[3].clone().add(vs[5+3]),
+	vs[0]
+      ]);
+      addTriangle([
+	vs[5+3],
+	vs[5+0],
+	vs[5+3].clone().add(vs[3])
+      ]);
+      addTriangle([
+	vs[1],
+	vs[2].clone().add(vs[5+3]),
+	vs[2]
+      ]);
+      addTriangle([
+	vs[5+2],
+	vs[5+2].clone().add(vs[3]),
+	vs[5+1]
+      ]);
+    };
 
     // TODO: take these shapes' share of triangles, and 
     // recurse to find more composites.
 
-    return [c];
+    addCube(shapeBasis[0].concat(shapeBasis[1]))
+    return [triangles];
   } else {
     return [c];
   }

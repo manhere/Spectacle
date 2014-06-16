@@ -83,6 +83,7 @@ var mutators = (function() {
     renderObjects(objects);
   };
   var renderSTL = function(triangles, name) {
+    if( triangles.length == 0 ) return;
     var geo = new THREE.Geometry();
     var allVs = [];
     triangles.forEach(function(triangle, i) {

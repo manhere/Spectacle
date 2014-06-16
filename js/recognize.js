@@ -50,7 +50,6 @@ var recognizePrimitiveShape = function(triangles, center) {
 	[d.x, Math.round((d.z+d.y)/4)]);
     return "Cy " + measures.join("@");
   } else if(isConstant(orthogonalCounts)) {
-    // NB. not sufficient to distinguish from an unknown shape
     return "S @" + Math.round((d.x+d.y+d.z)/6);
   } else {
     return "Unk";

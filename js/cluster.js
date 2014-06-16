@@ -28,10 +28,4 @@ var findCompositeFacets = function(triangles) {
   };
   return findComposites(triangles);
 };
-var vEqual = function(a, b) {
-  for( var k in a ) {
-    if( a[k] != b[k] ) return false;
-  }
-  return true;
-};
 

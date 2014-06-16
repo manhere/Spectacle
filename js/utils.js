@@ -248,4 +248,10 @@ var findReverse = function(xs, y) {
   });
   return matches[0];
 };
+var vEqual = function(a, b) {
+  for( var k in a ) {
+    if( a[k] != b[k] ) return false;
+  }
+  return true;
+};
 

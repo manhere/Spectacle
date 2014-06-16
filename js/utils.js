@@ -562,8 +562,10 @@ var splitComposite = function(c) {
     };
     var triangles = [];
     var addTriangle = function(triangles, ps) {
+      var a = ps[0].clone().multiplyScalar(-1).add(ps[1]),
+          b = ps[1].clone().multiplyScalar(-1).add(ps[2]);
       triangles.push(new Triangle(
-	[0,0,0], 
+	vertexFromVector(a.clone().cross(b).normalize()), 
 	extensionFromOrigin(ps),
 	null));
     };

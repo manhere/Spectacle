@@ -3,6 +3,12 @@ var Controls = function(render, camera, scene, elm) {
   this.sceneRender = render;
   this.focalPoint = new THREE.Vector3(0,0,0);
   this.rotationVector = new THREE.Vector3(1, 0, 0);
+  this.basis = [
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, 0, 1)
+  ];
+  this.upVector = function() { return this.basis[2].clone(); };
   this.lookingVector = function(update) {
     if( update ) {
       this.rotationVector = update;
@@ -11,16 +17,17 @@ var Controls = function(render, camera, scene, elm) {
   };
   this._position = new THREE.Vector3(-2000, 0, 100);
   this.position = function() {
-    return this.focalPoint.clone().add(this._position);
+    var v = this.focalPoint.clone().add(this._position),
+        basis = this.basis;
+    return basis[0].clone().multiplyScalar(v.x).add(
+	    basis[1].clone().multiplyScalar(v.y).add(
+	      basis[2].clone().multiplyScalar(v.z)));
   };
   this.hypZ = function() {
     return Math.sqrt(_2(this._position.x) + _2(this._position.y) + _2(this._position.z));
   };
   this.camera = camera;
   this.scene = scene;
-  this.rotate = function(right, left, up, down) {
-    this.lookingVector().add(new THREE.Vector3((right ? 1 : (left ? -1 : 0)) * 0.05, 0, (up ? 1 : (down ? -1 : 0)) * 0.05));
-  };
   this.face = function(key) {
     this.lookingVector([
       new THREE.Vector3(1, 0, 0),
@@ -106,7 +113,7 @@ var Controls = function(render, camera, scene, elm) {
 };
 Controls.prototype.render = function() {
   this.camera.position = this.position();
-  this.camera.up = new THREE.Vector3(0,0,1);
+  this.camera.up = this.upVector();
   this.camera.lookAt(this.position().clone().add(this.lookingVector().clone().multiplyScalar(10)));
   this.sceneRender(this.scene, this.camera);
   requestAnimationFrame(this.render.bind(this));

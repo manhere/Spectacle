@@ -116,6 +116,14 @@ var mutators = (function() {
       type: recognizePrimitiveShape(triangles, center),
       active: focus == "*",
       visible: true });
+    var focalPoint = objects.map(
+      function(x) {
+        return x.position.clone();
+	}).reduce(
+	  function(a, x) {
+	    return a.add(x);
+	    }).multiplyScalar(1/objects.length);
+    controls.focalPoint = focalPoint;
     renderObjects(objects);
   };
   return { renderSTL: renderSTL,

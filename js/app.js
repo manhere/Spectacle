@@ -134,26 +134,35 @@ var renderSTL = mutators.renderSTL,
     withinBounds = mutators.withinBounds,
     renderFocus = mutators.renderFocus;
 
-var handleSTL = function(evt) {
+var handleSTL = function(explode, evt) {
+  var fileCount = evt.target.files.length,
+      loaded = 0;
   [].forEach.call(evt.target.files, function(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
       var bytes = new Uint8Array(e.target.result);
       var triangles = parse(bytes).data;
-      var composites = findCompositeFacets(
-        triangles).map(
-	  splitComposite).reduce(
-	    function(a,b) {
-	      return a.concat(b);
-	    }, []);
-      composites.forEach(function(c, i) {
-	renderSTL(c, file.name + " c"+i);
-      });
+      loaded++;
+      document.title = "Loading ("+loaded+"/"+fileCount+")";
+      if( explode ) {
+	var composites = findCompositeFacets(
+	  triangles).map(
+	    splitComposite).reduce(
+	      function(a,b) {
+		return a.concat(b);
+	      }, []);
+	composites.forEach(function(c, i) {
+	  renderSTL(c, file.name + " c"+i);
+	});
+      } else {
+	renderSTL(triangles, file.name);
+      }
     };
     reader.readAsArrayBuffer(file);
   });
 };
-document.getElementById('files').addEventListener('change', handleSTL, false);
+document.getElementById('files').addEventListener('change', handleSTL.bind({}, true), false);
+document.getElementById('composites').addEventListener('change', handleSTL.bind({}, false), false);
 [].forEach.call(
   document.querySelectorAll("#visibleRange input"),
   function(range) {

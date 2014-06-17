@@ -126,13 +126,50 @@ var mutators = (function() {
     controls.focalPoint = focalPoint;
     renderObjects(objects);
   };
+  var indicators = [];
+  var enterSelectMode = function(x, pos) {
+    var selection = x?"~":"*";
+
+    var objs = objects.filter(function(o) {
+      return o.visible;
+    }).map(function(o) {
+      return scene.getObjectByName(o.name); 
+    });
+    var vector = new THREE.Vector3(pos[0]*2-1, -pos[1]*2+1 , 0.5);
+    var projector = new THREE.Projector();
+    projector.unprojectVector(vector, camera);
+    var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+    var intersects = raycaster.intersectObjects(objs);
+    if( intersects.length ) {
+      selection = intersects[0].object.name;
+    }
+
+    renderFocusAndVisibilityOfObjects(selection);
+    if( indicators.length == 0 ) {
+      objects.forEach(function(o) {
+	var material = new THREE.MeshBasicMaterial({
+	  color: 0xff0000
+	});
+	var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), material);
+	sphere.position = o.position;
+	sphere.overdraw = true;
+	indicators.push({ object: o, indicator: sphere });
+	scene.add(sphere);
+      });
+    }
+    indicators.forEach(function(i) {
+      i.indicator.visible = x && i.object.visible;
+    });
+  };
   return { renderSTL: renderSTL,
     withinBounds: withinBounds,
-    renderFocus: renderFocusAndVisibilityOfObjects };
+    renderFocus: renderFocusAndVisibilityOfObjects,
+    enterSelectMode: enterSelectMode };
 }());
 var renderSTL = mutators.renderSTL,
     withinBounds = mutators.withinBounds,
-    renderFocus = mutators.renderFocus;
+    renderFocus = mutators.renderFocus,
+    enterSelectMode = mutators.enterSelectMode;
 
 var handleSTL = function(explode, evt) {
   var fileCount = evt.target.files.length,

@@ -30,13 +30,23 @@ var Controls = function(render, camera, scene, elm) {
       new THREE.Vector3(0, 0, -1)][key - 1]);
     this._position = this.lookingVector().clone().normalize().multiplyScalar(-this.hypZ());
   };
-  var start;
+  var start, isSelectMode = false;
+  var selectMode = function(x, evt) {
+    isSelectMode = x;
+    enterSelectMode(isSelectMode,
+      [evt.clientX/window.innerWidth, evt.clientY/window.innerHeight]);
+  };
   elm.addEventListener('mousedown', function(evt) {
-    start = [evt.x, evt.y];
+    if( evt.which == 3 ) selectMode(true, evt);
+    else start = [evt.x, evt.y];
   });
   elm.addEventListener('mouseup', function(evt) {
-    start = undefined;
+    if( evt.which == 3 ) selectMode(false, evt);
+    else start = undefined;
   });
+  elm.addEventListener('contextmenu', function(evt) {
+    evt.preventDefault();
+  }.bind(this));
  
   this.zoom = function(delta) {
     this._position.add(this.lookingVector().clone().multiplyScalar(-delta));
@@ -46,6 +56,8 @@ var Controls = function(render, camera, scene, elm) {
     this.zoom(evt.wheelDelta/5);
   }.bind(this));
   elm.addEventListener('mousemove', function(evt) {
+    if( evt.which == 3 ) selectMode(isSelectMode, evt);
+
     if( !start ) return;
     var end = [evt.x, evt.y],
 	delta = end.map(function(x, i) { return x - start[i]; }),

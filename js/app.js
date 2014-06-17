@@ -126,7 +126,6 @@ var mutators = (function() {
     controls.focalPoint = focalPoint;
     renderObjects(objects);
   };
-  var indicators = [];
   var enterSelectMode = function(x, pos) {
     var selection = x?"~":"*";
 
@@ -145,21 +144,6 @@ var mutators = (function() {
     }
 
     renderFocusAndVisibilityOfObjects(selection);
-    if( indicators.length == 0 ) {
-      objects.forEach(function(o) {
-	var material = new THREE.MeshBasicMaterial({
-	  color: 0xff0000
-	});
-	var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), material);
-	sphere.position = o.position;
-	sphere.overdraw = true;
-	indicators.push({ object: o, indicator: sphere });
-	scene.add(sphere);
-      });
-    }
-    indicators.forEach(function(i) {
-      i.indicator.visible = x && i.object.visible;
-    });
   };
   return { renderSTL: renderSTL,
     withinBounds: withinBounds,

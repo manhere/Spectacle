@@ -28,6 +28,7 @@ var Controls = function(render, camera, scene, elm) {
   };
   this.camera = camera;
   this.scene = scene;
+  this.panning = false;
   this.face = function(key) {
     this.lookingVector([
       new THREE.Vector3(1, 0, 0),
@@ -51,11 +52,13 @@ var Controls = function(render, camera, scene, elm) {
   elm.addEventListener('mousedown', function(evt) {
     if( evt.which == 3 ) selectMode(true, evt);
     else start = [evt.x, evt.y];
-  });
+    this.panning = mode.pan;
+  }.bind(this));
   elm.addEventListener('mouseup', function(evt) {
     if( evt.which == 3 ) selectMode(false, evt);
     else start = undefined;
-  });
+    this.panning = false;
+  }.bind(this));
   elm.addEventListener('contextmenu', function(evt) {
     evt.preventDefault();
   }.bind(this));
@@ -117,6 +120,19 @@ var Controls = function(render, camera, scene, elm) {
   this.render();
 };
 Controls.prototype.render = function() {
+  var xs = this.scene.children.filter(function(x) { return x.name == "motion_axes" });
+  if( xs.length ) {
+    var x = xs[0];
+    x.position = this.focalPoint.clone();
+    x.visible = this.panning;
+  } else if( this.scene.children.length > 0 ) {
+    var x = drawVector(new THREE.Vector3(0, 0, -5000), new THREE.Vector3(0, 0, 10000));
+    x.position = this.focalPoint.clone();
+    this.scene.add(x);
+    x.name = "motion_axes";
+    x.visible = this.panning;
+  }
+
   this.camera.position = this.position();
   this.camera.up = this.upVector();
   this.camera.lookAt(this.position().clone().add(this.lookingVector().clone().multiplyScalar(10)));

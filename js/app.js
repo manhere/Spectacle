@@ -60,7 +60,6 @@ var mutators = (function() {
   };
   var renderFocusAndVisibilityOfObjects = function(f) {
     focus = typeof f == 'string' ? f : focus;
-    console.log(objects);
     objects.forEach(function(object) {
       var name = object.name;
       if( !withinBounds(object) ) {
@@ -68,7 +67,6 @@ var mutators = (function() {
 	object.active = false;
 	scene.getObjectByName(name).visible = false;
       } else if( object.deleted ) {
-	console.log("deleted!");
 	scene.getObjectByName(name).visible = false;
 	// TODO: a way of undoing the delete
 	objects = objects.filter(function(x) { return x.name != name });

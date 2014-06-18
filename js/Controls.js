@@ -51,8 +51,10 @@ var Controls = function(render, camera, scene, elm) {
   });
   elm.addEventListener('mousedown', function(evt) {
     if( evt.which == 3 ) selectMode(true, evt);
-    else start = [evt.x, evt.y];
-    this.panning = mode.pan;
+    else {
+      start = [evt.x, evt.y];
+      this.panning = mode.pan;
+    }
   }.bind(this));
   elm.addEventListener('mouseup', function(evt) {
     if( evt.which == 3 ) selectMode(false, evt);

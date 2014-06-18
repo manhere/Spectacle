@@ -60,12 +60,18 @@ var mutators = (function() {
   };
   var renderFocusAndVisibilityOfObjects = function(f) {
     focus = typeof f == 'string' ? f : focus;
+    console.log(objects);
     objects.forEach(function(object) {
       var name = object.name;
       if( !withinBounds(object) ) {
 	object.visible = false;
 	object.active = false;
 	scene.getObjectByName(name).visible = false;
+      } else if( object.deleted ) {
+	console.log("deleted!");
+	scene.getObjectByName(name).visible = false;
+	// TODO: a way of undoing the delete
+	objects = objects.filter(function(x) { return x.name != name });
       } else if( name == focus || focus == "*" ) {
 	object.visible = true;
 	object.active = true;
@@ -145,15 +151,26 @@ var mutators = (function() {
 
     renderFocusAndVisibilityOfObjects(selection);
   };
+  var deleteSelection = function() {
+    var all = objects.length;
+    objects.forEach(function(x) {
+      if(x.name == focus) {
+        x.deleted = true;
+      }
+    });
+    renderFocusAndVisibilityOfObjects();
+  };
   return { renderSTL: renderSTL,
     withinBounds: withinBounds,
     renderFocus: renderFocusAndVisibilityOfObjects,
-    enterSelectMode: enterSelectMode };
+    enterSelectMode: enterSelectMode,
+    deleteSelection: deleteSelection };
 }());
 var renderSTL = mutators.renderSTL,
     withinBounds = mutators.withinBounds,
     renderFocus = mutators.renderFocus,
-    enterSelectMode = mutators.enterSelectMode;
+    enterSelectMode = mutators.enterSelectMode,
+    deleteSelection = mutators.deleteSelection;
 
 var handleSTL = function(explode, evt) {
   var fileCount = evt.target.files.length,

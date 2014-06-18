@@ -43,6 +43,11 @@ var Controls = function(render, camera, scene, elm) {
     enterSelectMode(isSelectMode,
       [evt.clientX/window.innerWidth, evt.clientY/window.innerHeight]);
   };
+  document.addEventListener('keydown', function(evt) {
+    if( evt.keyCode == 46 ) {
+      deleteSelection();
+    }
+  });
   elm.addEventListener('mousedown', function(evt) {
     if( evt.which == 3 ) selectMode(true, evt);
     else start = [evt.x, evt.y];

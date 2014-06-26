@@ -86,7 +86,7 @@ var mutators = (function() {
     });
     renderObjects(objects);
   };
-  var renderSTL = function(triangles, name) {
+  var renderSTL = function(triangles, name, type) {
     if( triangles.length == 0 ) return;
     var geo = new THREE.Geometry();
     var allVs = [];
@@ -117,7 +117,7 @@ var mutators = (function() {
     // update and render object list
     objects.push({ name: name,
       position: center,
-      type: recognizePrimitiveShape(triangles, center),
+      type: type || recognizePrimitiveShape(triangles, center),
       active: focus == "*",
       visible: true });
     var focalPoint = objects.map(
@@ -173,11 +173,13 @@ var renderSTL = mutators.renderSTL,
 var handleSTL = function(explode, evt) {
   var fileCount = evt.target.files.length,
       loaded = 0;
+  console.time("load");
   [].forEach.call(evt.target.files, function(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
       var bytes = new Uint8Array(e.target.result);
-      var triangles = parse(bytes).data;
+      var parsed = parse(bytes),
+          triangles = parsed.data;
       loaded++;
       document.title = "Loading ("+loaded+"/"+fileCount+")";
       if( explode ) {
@@ -191,7 +193,8 @@ var handleSTL = function(explode, evt) {
 	  renderSTL(c, file.name + " c"+i);
 	});
       } else {
-	renderSTL(triangles, file.name);
+	renderSTL(triangles, file.name, parsed.meta.header);
+	if( loaded == fileCount ) console.timeEnd("load");
       }
     };
     reader.readAsArrayBuffer(file);

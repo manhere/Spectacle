@@ -1,3 +1,6 @@
+// Description: Parses 3d models in the STL file format.
+// Provides parse : ArrayBuffer -> STLContent
+
 // Data Structures
 // ===============
 var Triangle = function(normal, vertices, attr) {
@@ -104,18 +107,28 @@ var readTriangle = function(buffer, offset) {
 
 var parse = function(bytes) {
   // ArrayBuffer -> STLContent
+
+  // bind takes two reader functions and a function with which to combine them,
+  // returning a new reader which will combine the two provided. In this case,
+  // the 80 char header and count are combined to form a reader of STLMeta
+  // objects.
   var meta = bind(
     readChars(80),
     readUint32,
     function(header, count) {
       return new STLMeta(header, count);
     });
+
+  // perform accepts a reader, an ArrayBuffer, and an offset, then evaluates
+  // the provided function with a read object and new offset as argument.
   return perform(
     meta, bytes, 0,
     function(meta, offset) {
+      // Form a triangle reader reading up to 6000 triangles from ArrayBuffer.
       var readTriangles = readArray(
 	Math.min(meta.count, 6000),
 	readTriangle);
+      // Return an STLContent object with the read meta data and triangle list.
       return new STLContent(meta, readTriangles(bytes, offset).read);
     });
 };

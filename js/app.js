@@ -103,6 +103,7 @@ var mutators = (function() {
     object.position.y = 0;
     object.position.z = 0;
     scene.add(object);
+    controls.render();
 
     var center = allVs.reduce(function(a, x) {
       return a.add(x);
@@ -117,7 +118,7 @@ var mutators = (function() {
     // update and render object list
     objects.push({ name: name,
       position: center,
-      type: type || recognizePrimitiveShape(triangles, center),
+      type: type || "Unk", // Composite recognition needs sped up.
       active: focus == "*",
       visible: true });
     var focalPoint = objects.map(
@@ -180,17 +181,17 @@ var handleSTL = function(explode, evt) {
       var bytes = new Uint8Array(e.target.result);
       var parsed = parse(bytes),
           triangles = parsed.data;
+      console.log("Parsed");
       loaded++;
       document.title = "Loading ("+loaded+"/"+fileCount+")";
       if( explode ) {
-	var composites = findCompositeFacets(
-	  triangles).map(
-	    splitComposite).reduce(
-	      function(a,b) {
-		return a.concat(b);
-	      }, []);
-	composites.forEach(function(c, i) {
+	var i = 0;
+	var composites = findCompositeFacets(triangles, function(c) {
+	  // NB. Using a callback is useless when we don't have multiple
+	  // threads, one for calculation and one for rendering.
+	  // Cf. Web Workers
 	  renderSTL(c, file.name + " c"+i);
+	  i++;
 	});
       } else {
 	renderSTL(triangles, file.name, parsed.meta.header);

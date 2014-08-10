@@ -126,7 +126,7 @@ var parse = function(bytes) {
     function(meta, offset) {
       // Form a triangle reader reading up to 6000 triangles from ArrayBuffer.
       var readTriangles = readArray(
-	Math.min(meta.count, 6000),
+	meta.count,
 	readTriangle);
       // Return an STLContent object with the read meta data and triangle list.
       return new STLContent(meta, readTriangles(bytes, offset).read);
